@@ -19,6 +19,8 @@ struct Index {
   private diagnostic: NativeAudio = new NativeAudio();
   private config?: CareConfig;
   private alive: boolean = false;
+  @StorageLink('guardianForeground') @Watch('foregroundChanged') private visible: boolean = true;
+  private pendingShake: boolean = false;
 
   aboutToAppear(): void {
     this.alive = true;
@@ -26,13 +28,23 @@ struct Index {
     context.resourceManager.getRawFileContent('care.json').then((data: Uint8Array): void => {
       this.config = JSON.parse(util.TextDecoder.create('utf-8').decodeWithStream(data)) as CareConfig;
       this.title = this.config.name; this.laptopAudio = this.config.audioSource !== 'native';
-      try { this.shake.start((): void => { this.begin(); }); }
+      try { this.shake.start((): void => {
+        if (this.visible) { this.begin(); }
+        else {
+          this.pendingShake = true;
+          hilog.info(0x0001, 'GuardianWake', 'BACKGROUND_SHAKE_REQUEST');
+        }
+      }); }
       catch (error) { this.message = 'Shake unavailable on this device.'; }
     }).catch((error: Error): void => { this.message = 'Configuration error: ' + error.message; });
   }
 
   aboutToDisappear(): void {
     this.alive = false; this.shake.stop(); this.voice.stop(); this.diagnostic.stop();
+  }
+
+  private foregroundChanged(): void {
+    if (this.visible && this.pendingShake && this.config) { this.pendingShake = false; this.begin(); }
   }
 
   onPageHide(): void { this.voice.stop(); this.diagnostic.stop(); this.busy = false; this.shake.arm(); }

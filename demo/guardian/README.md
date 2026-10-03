@@ -55,3 +55,16 @@ Build/install/UI launch are validated separately from placing calls; launching t
 ## Demo presentation
 
 Launcher name and icon are Care Guardian. Audio diagnostics are hidden by default; long-press the top Care Guardian header to reveal them. Laptop microphone/speakers remain the default. Three shakes begin the real test; End / Reset stops it.
+
+## Background shake wake on the emulator
+
+The native accelerometer listener remains active after pressing Home. Three impulses emit `GuardianWake: BACKGROUND_SHAKE_REQUEST`. While `./demo/guardian/dev runtime` is running, its dedicated HDC adapter opens the existing `com.hackyeah.guardian.demo/EntryAbility` without force-stopping the process. The foreground lifecycle then starts the pending voice check-in. Start the app once after reboot/build (`./demo/guardian/dev run --no-build`), press Home and leave it alive in the background; use the emulator's Shake control. One official `-shake` scenario produces the three impulses:
+
+```bash
+./demo/guardian/dev ui key Home
+./demo/guardian/dev emu -shake
+```
+
+This is a **host-assisted emulator demo**, not a privileged standalone background-launch feature. It needs the laptop backend/HDC bridge and the native process alive; force-stop, process eviction, device reboot, lock-screen behavior and prolonged background suspension are not covered. Background startup of ordinary apps is restricted; see the local API 24 `application/UIAbilityContext.d.ts` and [Huawei UIAbilityContext documentation](https://developer.huawei.com/consumer/en/doc/harmonyos-references-V14/js-apis-inner-application-uiabilitycontext-V14).
+
+Validated on this emulator: Home → native three-shake event → HDC foreground launch → pending check-in attempts backend connection, retaining the same PID. The voice backend was intentionally stopped for this wake test, so the expected connection error confirmed entry into the check-in without creating a live voice session/call. Backend and bridge were then restored, with the app left on Home and no session active. Restarting the bridge discards existing shake logs. `stop-runtime` stops the backend and its bridge together. For wake-only debugging: `./demo/guardian/dev wake-bridge` (Ctrl+C to stop).
