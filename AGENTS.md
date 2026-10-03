@@ -10,3 +10,5 @@ The environment is a Git submodule pinned to a tested upstream commit. Follow
 README.md to update it; publish submodule changes upstream before recording their
 commit here. Keep application code in src/. Do not commit SDKs, images, caches,
 local environment configuration or secrets.
+
+User-authorized exception: the directly editable Care Guardian demo lives in demo/guardian/app, with a dedicated backend in suggested-host-venv/demo/guardian. Use ./demo/guardian/dev for that flow; preserve src/ and the generic worker.

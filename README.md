@@ -94,3 +94,7 @@ git submodule update --init --recursive
 ```
 
 The feature branch pins the published environment commit; no separate submodule branch checkout is needed to run it. For a fresh clone use `git clone --branch feature/care-guardian-worker --recurse-submodules https://github.com/Froxyy-dev/Lockedin-Huawei.git`. Configure your own `suggested-host-venv/.env.local` from its example and follow [Care Guardian setup](suggested-host-venv/docs/CARE_GUARDIAN.md). Physical phones need signing; emulator installation is verified.
+
+## Direct Care Guardian demo
+
+For independent demo iteration without the planner/generator, use [demo/guardian](demo/guardian/README.md). Native source and the dedicated voice backend are isolated from src/ and bot/care. Both repositories use branch `feature/guardian-demo`.

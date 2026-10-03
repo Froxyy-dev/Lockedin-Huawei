@@ -1,0 +1,7 @@
+.local/
+app/oh_modules/
+app/entry/oh_modules/
+app/.hvigor/
+app/entry/build/
+app/build/
+app/entry/src/main/resources/rawfile/care.json

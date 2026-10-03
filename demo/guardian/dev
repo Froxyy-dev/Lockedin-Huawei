@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+here="$(dirname "$(readlink -f "$0")")"
+repo="$(cd "$here/../.." && pwd)"
+export GUARDIAN_APP="$here/app" GUARDIAN_DATA_DIR="$here/.local/care"
+export HOS_APP="$GUARDIAN_APP"
+export HOS_EMU_NAME="${HOS_EMU_NAME:-MissingAppClient}"
+export HOS_EMU_HDC_PORT="${HOS_EMU_HDC_PORT:-15603}"
+case "${1:-help}" in
+  setup|runtime|stop-runtime) exec "$repo/suggested-host-venv/demo/guardian/dev" "$@" ;;
+  help) echo 'setup | runtime | stop-runtime | deps | check | run | inspect | ui | shot | emu | logs'; exit 0 ;;
+  *) exec "$repo/dev" "$@" ;;
+esac

@@ -1,0 +1,53 @@
+# Care Guardian: direct demo development
+
+This is a snapshot of the working native Care Guardian app, independent of the planner and generator. Edit `app/entry/src/main/ets/pages/Index.ets` for UI and `app/entry/src/main/ets/care/` for device behavior. The dedicated backend snapshot is `../../suggested-host-venv/demo/guardian/care/`; edit that directory for voice, response classification and escalation. Changes here do not regenerate or replace `src/` or worker capabilities in `bot/`.
+
+## Setup and run
+
+From the repository root, after setting up the official SDK/emulator with the existing environment instructions:
+
+```bash
+git submodule update --init --recursive
+./dev bot care-deps
+# Fill suggested-host-venv/.env.local from its .env.example:
+# ELEVENLABS_API_KEY, OPENAI_API_KEY, ELEVENLABS_PHONE_NUMBER_ID,
+# DEMO_RECIPIENT_NUMBER (E.164), DEMO_CAREGIVER_NAME.
+# Complete the existing Twilio/ElevenLabs phone setup if necessary.
+./demo/guardian/dev setup
+./demo/guardian/dev deps
+./demo/guardian/dev check
+./demo/guardian/dev runtime        # leave running in a terminal
+# Another terminal:
+./demo/guardian/dev run
+./demo/guardian/dev inspect
+./demo/guardian/dev shot demo/guardian/.local/guardian.jpeg
+```
+
+Start check-in initiates a **real** ElevenLabs voice session using laptop microphone/speakers by default. Say “No, I don't feel well”, then “I feel dizzy”. When asked whether to contact the caregiver, silence or an unrelated response leads to a real phone call. The four-second window starts after the question audio finishes; location acquisition and provider submission can add delay. Explicit refusal prevents automatic escalation. OpenAI checks response relevance. This is a hackathon demonstration, not a medical safety system.
+
+```bash
+./demo/guardian/dev stop-runtime  # stops this demo only; an existing phone call is independent
+```
+
+For iteration, edit the checked-in files, then `./demo/guardian/dev check` and `./demo/guardian/dev run --no-build`. Restart the demo backend after Python changes. No generation job, prompt or planner is needed. Prompts in `care/prompts.py` apply when provisioning a new agent; editing a prompt does not automatically update an already provisioned remote agent.
+
+## Isolation and local data
+
+- Dedicated bundle: `com.hackyeah.guardian.demo`; generic worker apps cannot overwrite it.
+- Dedicated backend port: `8789`; existing worker runtime remains on `8788`.
+- Dedicated ignored state: `.local/care/` (agent IDs, scoped token, recipient, SQLite).
+- Backend secrets remain in `suggested-host-venv/.env.local`; never embed provider keys in ArkTS.
+- `setup` creates/reuses demo agents and writes an ignored `app/entry/src/main/resources/rawfile/care.json`. It does not modify native source.
+- This machine initially reuses the existing validated remote agents, with a new app-scoped token and isolated state. A teammate's first setup provisions their own agents.
+- Defaults target the existing `MissingAppClient` emulator, HDC port `15603`. Override `HOS_EMU_NAME` and `HOS_EMU_HDC_PORT` for another instance.
+- For a physical phone set `GUARDIAN_DEVICE_URL=http://<laptop-LAN-IP>:8789` and `GUARDIAN_BIND=0.0.0.0` before setup/runtime; physical-device signing is still required and has not been tested. Do not expose this backend publicly.
+- Location availability is not guaranteed. Emulator coordinates are explicitly marked simulated. Native emulator microphone remains unreliable; laptop audio is the tested path.
+
+Build/install/UI launch are validated separately from placing calls; launching the demo does not start a voice check-in automatically.
+
+## Validation of this snapshot
+
+- Lint: no defects; official Hvigor build successful, unsigned HAP 190709 bytes. Compiler warnings remain for legacy native-audio API calls.
+- Installed and launched `com.hackyeah.guardian.demo` on `127.0.0.1:15603`; UI shows `Start check-in` with laptop audio enabled. Screenshot visually inspected at `.local/guardian.jpeg`.
+- Dedicated backend `/health` responds on port 8789; 14 isolated backend tests pass (mocked external calls).
+- No new live voice session or phone call was started during isolation. End-to-end behavior is inherited from the previously tested app/runtime and still needs a live retest on this dedicated configuration.
