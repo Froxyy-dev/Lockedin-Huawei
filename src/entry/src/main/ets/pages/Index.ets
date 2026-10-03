@@ -1,5 +1,6 @@
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS';
+import { router } from '@kit.ArkUI';
 import { BotClient, BotConfig, BotJob } from '../model/BotClient';
 import { accessibility } from '@kit.AccessibilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -123,16 +124,27 @@ struct Index {
   }
 
   build() {
-    Stack() {
-      if (this.screen === 'create') {
-        CreatePage({ prompt: $prompt, controller: this.controller, onCreate: () => { this.beginPlanning(); } })
-          .transition(TransitionEffect.OPACITY.combine(TransitionEffect.scale({ x: 0.98, y: 0.98 })))
-      } else if (this.screen === 'planning') {
-        PlanningPage({ plan: this.plan, stage: this.stage, progress: this.progress, error: this.error, ready: this.ready, onBack: () => { this.reset(); },
-          onOpen: () => { this.openGenerated(); } })
-      } else {
-        CareGuardianPlaceholder({ onBack: () => { this.reset(); } })
+    Column() {
+      Stack() {
+        if (this.screen === 'create') {
+          CreatePage({ prompt: $prompt, controller: this.controller, onCreate: () => { this.beginPlanning(); } })
+            .transition(TransitionEffect.OPACITY.combine(TransitionEffect.scale({ x: 0.98, y: 0.98 })))
+        } else if (this.screen === 'planning') {
+          PlanningPage({ plan: this.plan, stage: this.stage, progress: this.progress, error: this.error, ready: this.ready, onBack: () => { this.reset(); },
+            onOpen: () => { this.openGenerated(); } })
+        } else {
+          CareGuardianPlaceholder({ onBack: () => { this.reset(); } })
+        }
       }
+      .width('100%').layoutWeight(1)
+
+      Button('Harness', { type: ButtonType.Normal })
+        .id('OpenHarness')
+        .backgroundColor(Color.Transparent)
+        .fontColor(HarmonyTheme.secondary)
+        .fontSize(12)
+        .height(28)
+        .onClick(() => { router.pushUrl({ url: 'pages/CreationsPage' }); })
     }
     .width('100%').height('100%').backgroundColor(HarmonyTheme.background)
   }
