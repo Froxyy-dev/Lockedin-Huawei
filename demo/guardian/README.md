@@ -29,7 +29,7 @@ Three shakes initiate a **real** ElevenLabs voice session using laptop microphon
 ./demo/guardian/dev stop-runtime  # stops this demo only; an existing phone call is independent
 ```
 
-For iteration, edit the checked-in files, then `./demo/guardian/dev check` and `./demo/guardian/dev run --no-build`. Restart the demo backend after Python changes. No generation job, prompt or planner is needed. Prompts in `care/prompts.py` apply when provisioning a new agent; editing a prompt does not automatically update an already provisioned remote agent.
+For iteration, edit the checked-in files, then `./demo/guardian/dev check` and `./demo/guardian/dev run --no-build`. Restart the demo backend after Python changes. No generation job, prompt or planner is needed. Demo prompts in `care/prompts.py` are supplied per new voice session/caregiver call, so restarting the backend applies edits without recreating remote agents.
 
 ## Isolation and local data
 
@@ -71,6 +71,16 @@ Validated on this emulator: Home → native three-shake event → HDC foreground
 
 ## Conversation-first demo screen
 
-The primary view shows an ordered, scrollable history of the current check-in, with Grandma and Care Guardian speech in separate bubbles. Voice status is a small row below the header. No Start or End/Reset button appears in the presentation UI. History remains visible after disconnect and clears when a new shake-triggered check-in begins; it is held in memory and not persisted to disk. Long-press the header for the hidden Stop session control. Closed sessions automatically re-arm shaking.
+The primary view shows an ordered, scrollable history of the current check-in, with Grandpa and Care Guardian speech in separate bubbles. Voice status is a small row below the header. No Start or End/Reset button appears in the presentation UI. History remains visible after disconnect and clears when a new shake-triggered check-in begins; it is held in memory and not persisted to disk. Long-press the header for the hidden Stop session control. Closed sessions automatically re-arm shaking.
 
 UI validation uses a local ignored fixture with representative provider events, not a real phone call. Screenshots: `.local/conversation.jpeg` and `.local/conversation-compact.jpeg`.
+
+## Grandpa, four-second escalation and mocked location
+
+Demo narration uses Grandpa/he/him. The internal `grandma_agent` config key remains for compatibility with already provisioned agent IDs; it does not control narration. The native conversation history labels his speech Grandpa.
+
+The dedicated backend's checked-in `context.json` supplies a **mock** HackYeah location at Tauron Arena, Kraków (50.067, 19.991). It is not live GPS. The caregiver call opens with a brief incident explanation and **does not volunteer location**. Ask “Where is he?” and the agent answers using the supplied location. The mock is also available to the companion. With this mock enabled, escalation does not wait up to five seconds for device GPS.
+
+The timer starts after caregiver-question audio. Continuous raw VAD/noise cannot postpone it beyond its deadline; punctuation-only ASR such as “...” is not a meaningful response. Repeated contact questions cannot restart the timer. Pending semantic classification can delay a decision; explicit refusal still prevents automatic escalation. Logs include silence_window, reply_checked, silence_due, escalation_started and call_result, without logging transcript text or credentials. Phone ringing can occur later than the four-second trigger because provider submission/carrier setup takes time.
+
+Validation: 20 tests passed, including a real-time relay with mocked providers submitting exactly once after approximately 4.02 seconds despite noise, ellipsis and a repeated question. No real outbound call was placed by this regression test. A real ElevenLabs WebSocket probe confirmed an opening about “Your grandfather…” with no location, followed by a HackYeah answer to “Where is he?”. This probe did not capture laptop audio or dial a phone. Per-session overrides use the [official ElevenLabs WebSocket protocol](https://elevenlabs.io/docs/eleven-agents/api-reference/eleven-agents/websocket).

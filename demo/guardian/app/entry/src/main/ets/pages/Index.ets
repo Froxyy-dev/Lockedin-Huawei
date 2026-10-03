@@ -9,7 +9,7 @@ interface ConversationTurn {
   id: number;
   speaker: string;
   text: string;
-  grandma: boolean;
+  grandpa: boolean;
 }
 
 @Entry
@@ -91,11 +91,11 @@ struct Index {
   }
 
   private appendTurn(text: string): void {
-    const grandma = text.startsWith('You: ');
-    const prefix = grandma ? 'You: ' : 'Care Guardian: ';
+    const grandpa = text.startsWith('You: ');
+    const prefix = grandpa ? 'You: ' : 'Care Guardian: ';
     const turn: ConversationTurn = {
-      id: this.nextTurnId++, speaker: grandma ? 'Grandma' : 'Care Guardian',
-      text: text.startsWith(prefix) ? text.substring(prefix.length) : text, grandma: grandma
+      id: this.nextTurnId++, speaker: grandpa ? 'Grandpa' : 'Care Guardian',
+      text: text.startsWith(prefix) ? text.substring(prefix.length) : text, grandpa: grandpa
     };
     this.conversation = [...this.conversation, turn];
     setTimeout((): void => {
@@ -135,14 +135,14 @@ struct Index {
             Column({ space: 14 }) {
               ForEach(this.conversation, (turn: ConversationTurn) => {
                 Row() {
-                  if (turn.grandma) { Blank().width(24) }
+                  if (turn.grandpa) { Blank().width(24) }
                   Column({ space: 7 }) {
                     Text(turn.speaker).fontSize(12).fontWeight(FontWeight.Medium)
-                      .fontColor(turn.grandma ? '#315FB3' : '#526784').width('100%')
+                      .fontColor(turn.grandpa ? '#315FB3' : '#526784').width('100%')
                     Text(turn.text).fontSize(20).fontColor('#18263C').width('100%')
                   }.layoutWeight(1).padding(16).borderRadius(22)
-                    .backgroundColor(turn.grandma ? '#E8EFFD' : '#FFFFFF')
-                  if (!turn.grandma) { Blank().width(24) }
+                    .backgroundColor(turn.grandpa ? '#E8EFFD' : '#FFFFFF')
+                  if (!turn.grandpa) { Blank().width(24) }
                 }.width('100%')
               }, (turn: ConversationTurn): string => turn.id.toString())
               if (this.conversation.length === 0) {
