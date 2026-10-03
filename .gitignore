@@ -9,3 +9,5 @@
 *.cer
 *.csr
 *.pem
+
+/src/entry/src/main/resources/rawfile/bot.json

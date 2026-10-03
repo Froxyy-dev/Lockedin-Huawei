@@ -92,3 +92,11 @@ checkmarks, placeholder navigation, result reset and cancellation mid-planning.
 Screenshots and visual iterations are recorded locally under the environment's
 ignored `out/` directory. Fresh emulator keyboards can require one-time setup;
 Celia Basic mode was used without cloud input features.
+
+### Local generator integration
+
+The Create action submits to the local bot API and polls real job status. Configuration is read from ignored `src/entry/src/main/resources/rawfile/bot.json` (`baseUrl`, `token`); never commit this file or a HAP containing this local token. Current emulator URL: `http://10.0.2.2:8787`.
+
+Use `suggested-host-venv/dev bot serve` to start the server from its own template. The root `./dev` targets the client emulator `MissingAppClient` (15603); generation verification uses `HOS23` (15601). Run `HDC_TARGET=127.0.0.1:15603 BOT_AGENT_LAUNCH=0 suggested-host-venv/dev bot agent` for delivery. Create → real generation/build → install → Open your app. Back returns to the prompt; it does not cancel a queued server job. Select Claude or Codex in suggested-host-venv/bot/generator.local.conf. Claude cost/turn caps do not apply to Codex.
+
+Client configuration: copy `src/entry/src/main/resources/rawfile/bot.example.json` to `bot.json` in the same folder and replace the placeholder token with the local server BOT_TOKEN. The real bot.json is ignored; keep HAPs containing its token private.

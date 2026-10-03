@@ -8,7 +8,7 @@ struct GoalCard {
 
   build() {
     Column({ space: 12 }) {
-      Text('GOAL DETECTED').fontSize(11).fontWeight(FontWeight.Bold)
+      Text('YOUR REQUEST').fontSize(11).fontWeight(FontWeight.Bold)
         .letterSpacing(1.6).fontColor(HarmonyTheme.accent)
       Text(this.goal).fontSize(25).lineHeight(32).fontWeight(FontWeight.Medium)
         .fontColor(HarmonyTheme.ink).maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -39,6 +39,9 @@ struct CapabilitySelectionRow {
 @Component
 export struct PlanningPage {
   plan: ExperiencePlan = new MockHarmonyPlanner().compose(DEMO_PROMPT);
+  @Prop progress: string = '';
+  @Prop error: string = '';
+  @Prop ready: boolean = false;
   @Prop stage: number = 0;
   onBack: () => void = () => {};
   onOpen: () => void = () => {};
@@ -52,19 +55,19 @@ export struct PlanningPage {
         .fontWeight(FontWeight.Bold).fontColor(HarmonyTheme.ink).width('100%').margin({ top: 22 })
       GoalCard({ goal: this.plan.goal }).margin({ top: 24 })
         .opacity(this.stage >= 1 ? 1 : 0).translate({ y: this.stage >= 1 ? 0 : 10 })
-      Text('Composing Harmony capabilities').fontSize(15).fontWeight(FontWeight.Medium)
+      Text('Creating a native HarmonyOS app').fontSize(15).fontWeight(FontWeight.Medium)
         .fontColor(HarmonyTheme.secondary).margin({ top: 24, bottom: 10 })
         .opacity(this.stage >= 1 ? 1 : 0)
       ForEach(this.plan.capabilities, (item: Capability, index: number) => {
         CapabilitySelectionRow({ capability: item, selected: this.stage >= index + 2 })
       }, (item: Capability) => item.name)
       Blank().layoutWeight(1)
-      if (this.stage >= 7) {
-        Text('Care Guardian ready').fontSize(14).fontColor(HarmonyTheme.secondary).margin({ bottom: 12 })
-        PrimaryActionButton({ label: 'Open Care Guardian', actionId: 'OpenCareGuardian', onAction: this.onOpen })
+      if (this.ready) {
+        Text('Your app is ready').fontSize(14).fontColor(HarmonyTheme.secondary).margin({ bottom: 12 })
+        PrimaryActionButton({ label: 'Open your app', actionId: 'OpenCareGuardian', onAction: this.onOpen })
       } else {
-        Text(this.stage >= 6 ? 'Creating Care Guardian…' : 'Bringing your experience together')
-          .fontSize(14).fontColor(HarmonyTheme.secondary).height(56)
+        Text(this.error || this.progress)
+          .fontSize(16).fontColor(this.error ? '#B42318' : HarmonyTheme.secondary).width('100%').height(100)
       }
     }
     .width('100%').height('100%').alignItems(HorizontalAlign.Start)

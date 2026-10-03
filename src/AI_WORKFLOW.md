@@ -62,3 +62,12 @@ Complete this section only if AI is part of the product itself; otherwise write 
 - Data handling and privacy: [What leaves the device, retention, consent, and safeguards]
 - Failure and fallback behavior: [How errors, latency, offline use, and unsafe output are handled]
 - Evaluation: [Test cases, quality measures, human review, and known model limitations]
+
+
+### Local generator integration (not committed)
+User requested a local Codex generator test, then reported the UI did not submit. Added native NetworkKit client, ignored rawfile bot.json configuration, INTERNET permission, real job polling/error states, installation readiness and startAbility for com.hackyeah.generated. Separate client emulator MissingAppClient:15603 and verification HOS23:15601; device agent installs without launching. Local Codex adapter uses existing ChatGPT login; no Claude budget caps apply. No commits/pushes. Validation evidence is in suggested-host-venv/out/jobs and out/client-device-agent.log. Generation creates UI; real watch/health capabilities remain unimplemented.
+
+Validation: UI Create submitted job 20261003-194930-5eb1; generator succeeded, delivery reported ok on 15603; Open your app invoked the native inter-app confirmation and opened Watch check-in. I need help updated visible text with an explicit simulation/no-messaging disclosure. Build/lint passed. Screenshots: backend-ready.jpeg and generated-watch-checkin.jpeg in ignored out/harmony-create.
+
+### Generator failure and shake test
+User job 20261003-195721-28af failed because @State scale conflicts with ArkUI CustomComponent.scale; ACCELEROMETER permission was missing. Updated local Codex prompt to avoid component-method field collisions and allow module.json5 permissions. Added max-two compiler-driven repair attempts to runner using ignored out/codex-agent.py (repair branches not exercised in this successful retry). Repeated the exact user prompt from UI as job 20261003-200056-530e: succeeded in 171 seconds, installed and opened. TESTED ./dev emu -shake: native UI changed from Potrząśnij telefonem to 67!, number bounding box changed; animation ended at Potrząśnij ponownie. No commits/pushes. Original failed job kept for evidence.

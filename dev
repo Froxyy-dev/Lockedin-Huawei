@@ -3,4 +3,6 @@
 set -euo pipefail
 project_root="$(dirname "$(readlink -f "$0")")"
 export HOS_APP="${HOS_APP:-$project_root/src}"
+export HOS_EMU_NAME="${HOS_EMU_NAME:-MissingAppClient}"
+export HOS_EMU_HDC_PORT="${HOS_EMU_HDC_PORT:-15603}"
 exec "$project_root/suggested-host-venv/dev" "$@"
