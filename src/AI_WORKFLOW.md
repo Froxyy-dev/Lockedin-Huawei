@@ -21,6 +21,8 @@ This project uses AI-assisted development. Keep this document current and public
 
 | 2026-10-03 | Codex / GPT-6 | Put the application in src and show 67 after clicking a button; run visible emulator | Copied template source into src, added Pokaż 67 button and state-controlled number, routed ./dev to src | Lint/build passed; HAP installed; app ran; initial UI had button only; CLI click displayed Text 67; no crash logs. |
 
+| 2026-10-03 | Codex / GPT-6 | Commit required files and keep the environment independent | Added tested upstream environment as a submodule, documented clone/update setup, removed duplicate backups and organizer checkout | Remote contains pinned commit; root wrapper selects src; doctor/build and live app inspected after cleanup. No SDKs or credentials staged. |
+
 ## Workflow
 
 ### Ideation and architecture

@@ -1,0 +1,4 @@
+[submodule "suggested-host-venv"]
+	path = suggested-host-venv
+	url = https://github.com/szymon-hajderek/suggested-host-venv.git
+	branch = main
