@@ -1,6 +1,6 @@
 # Lockedin-Huawei
 
-Native ArkTS/ArkUI app for the Huawei HackYeah challenge. **Harmony Create** lets
+Native ArkTS/ArkUI app for the Huawei HackYeah challenge. **The Missing App** lets
 a user describe a need, previews a staged composition of Harmony capabilities,
 and opens the **Care Guardian** placeholder. Application source lives in [`src/`](src/).
 Planning is a local mock; no AI/backend, health/watch integration or recording is implemented.

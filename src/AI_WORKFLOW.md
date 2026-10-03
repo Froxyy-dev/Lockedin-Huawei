@@ -25,6 +25,8 @@ This project uses AI-assisted development. Keep this document current and public
 
 | 2026-10-03 | Codex / GPT-6 | Build the specified native Harmony Create frontend in src; no real AI or health backend | Modular Create, prompt, capability, action, planning and placeholder components; tokens and mock planner; six local SVG icons | Lint/build, installation and launch passed. Screenshots inspected across three visual iterations; staged checkmarks, microphone log, edited prompt propagation, navigation, reset and timer cancellation verified. Fresh Celia keyboard configured in Basic mode. Reduced-motion preference implemented but setting toggle not exercised. |
 
+| 2026-10-03 | Codex / GPT-6 | Fix clipped initial letter in prompt and rename product to The Missing App | Removed inner TextArea corner clipping, added text inset, updated header/back controls and launcher labels | Build and native screenshot verification performed on emulator. |
+
 ## Workflow
 
 ### Ideation and architecture

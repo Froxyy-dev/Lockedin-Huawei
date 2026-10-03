@@ -45,7 +45,7 @@ export struct PlanningPage {
 
   build() {
     Column() {
-      Button('‹  Harmony Create', { type: ButtonType.Normal })
+      Button('‹  The Missing App', { type: ButtonType.Normal })
         .id('PlanningBack').backgroundColor(Color.Transparent).fontColor(HarmonyTheme.secondary)
         .fontSize(14).height(36).padding(0).onClick(this.onBack)
       Text('Understanding your need…').fontSize(30).lineHeight(36)

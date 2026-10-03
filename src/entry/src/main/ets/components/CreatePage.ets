@@ -13,7 +13,7 @@ export struct CreatePage {
   build() {
     Column() {
       Column({ space: 5 }) {
-        Text('Harmony Create').fontSize(19).fontWeight(FontWeight.Medium).fontColor(HarmonyTheme.ink)
+        Text('The Missing App').fontSize(19).fontWeight(FontWeight.Medium).fontColor(HarmonyTheme.ink)
         Text('Personal software, just in time.').fontSize(13).fontColor(HarmonyTheme.secondary)
       }.width('100%').alignItems(HorizontalAlign.Start)
       Text('What should your device help you with?')

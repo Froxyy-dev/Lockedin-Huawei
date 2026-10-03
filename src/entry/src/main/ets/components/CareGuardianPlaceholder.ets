@@ -7,7 +7,7 @@ export struct CareGuardianPlaceholder {
 
   build() {
     Column() {
-      Button('‹  Harmony Create', { type: ButtonType.Normal })
+      Button('‹  The Missing App', { type: ButtonType.Normal })
         .id('ResultBack').backgroundColor(Color.Transparent).fontColor(HarmonyTheme.secondary)
         .fontSize(14).height(36).padding(0).alignSelf(ItemAlign.Start).onClick(this.onBack)
       Blank().layoutWeight(1)
@@ -19,7 +19,7 @@ export struct CareGuardianPlaceholder {
         .fontColor(HarmonyTheme.ink).margin({ top: 24, bottom: 10 })
       Text('Experience ready').fontSize(18).fontColor(HarmonyTheme.secondary)
       Blank().layoutWeight(1)
-      PrimaryActionButton({ label: 'Back to Harmony Create', actionId: 'ResetDemo', onAction: this.onBack })
+      PrimaryActionButton({ label: 'Back to The Missing App', actionId: 'ResetDemo', onAction: this.onBack })
     }.width('100%').height('100%').padding({ left: 24, right: 24, top: 10, bottom: 24 })
   }
 }
