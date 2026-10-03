@@ -1,7 +1,9 @@
 # Lockedin-Huawei
 
-Native ArkTS/ArkUI app for the Huawei HackYeah challenge. The current demo displays
-`67` after clicking **Pokaż 67**. Application source lives in [`src/`](src/).
+Native ArkTS/ArkUI app for the Huawei HackYeah challenge. **Harmony Create** lets
+a user describe a need, previews a staged composition of Harmony capabilities,
+and opens the **Care Guardian** placeholder. Application source lives in [`src/`](src/).
+Planning is a local mock; no AI/backend, health/watch integration or recording is implemented.
 
 The Linux development environment is the independent
 [`suggested-host-venv`](https://github.com/szymon-hajderek/suggested-host-venv)
@@ -68,3 +70,25 @@ For normal clones/pulls, use `git submodule update --init --recursive` to restor
 the version pinned by the main repository. That command does not upgrade upstream.
 Develop and publish environment changes in its own repository before committing
 its new pointer here; a local-only submodule commit cannot be cloned by teammates.
+
+## Frontend demo
+
+Editable prompt → **Create with Harmony** → 3.5-second capability planning preview
+→ **Open Care Guardian**. The back controls reset the flow and cancel pending timers.
+The microphone briefly highlights and logs a preview action; it does not record.
+
+Components are in `src/entry/src/main/ets/components/`; design tokens in `theme/`;
+`model/HarmonyPlanner.ets` contains the typed plan and explicit demo fixture. Replace
+the mock planner adapter when connecting a backend; page components consume the
+plan rather than backend details. Edited prompts are echoed as the mock goal; the
+capabilities and Care Guardian result remain the same demo fixture.
+
+Reduced-motion preference is read through the SDK's API23 accessibility method
+with a guarded fallback on older devices. Stage timing remains visible; motion is
+disabled when that preference is enabled. The app requests no additional permissions.
+
+Verified on the API23 phone emulator: editable input, microphone log, sequential
+checkmarks, placeholder navigation, result reset and cancellation mid-planning.
+Screenshots and visual iterations are recorded locally under the environment's
+ignored `out/` directory. Fresh emulator keyboards can require one-time setup;
+Celia Basic mode was used without cloud input features.

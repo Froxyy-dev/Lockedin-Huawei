@@ -23,6 +23,8 @@ This project uses AI-assisted development. Keep this document current and public
 
 | 2026-10-03 | Codex / GPT-6 | Commit required files and keep the environment independent | Added tested upstream environment as a submodule, documented clone/update setup, removed duplicate backups and organizer checkout | Remote contains pinned commit; root wrapper selects src; doctor/build and live app inspected after cleanup. No SDKs or credentials staged. |
 
+| 2026-10-03 | Codex / GPT-6 | Build the specified native Harmony Create frontend in src; no real AI or health backend | Modular Create, prompt, capability, action, planning and placeholder components; tokens and mock planner; six local SVG icons | Lint/build, installation and launch passed. Screenshots inspected across three visual iterations; staged checkmarks, microphone log, edited prompt propagation, navigation, reset and timer cancellation verified. Fresh Celia keyboard configured in Basic mode. Reduced-motion preference implemented but setting toggle not exercised. |
+
 ## Workflow
 
 ### Ideation and architecture

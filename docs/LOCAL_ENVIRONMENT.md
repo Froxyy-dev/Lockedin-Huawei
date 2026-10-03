@@ -17,8 +17,10 @@ The submodule is pinned to tested commit `f506e673add089f4e500a498cf90d19e66dac9
 
 ✅ TESTED on Ubuntu22.04, 2026-10-03: lint/build, unsigned HAP installation,
 app launch, headless and graphical emulator boot, HDC, logs, screenshot and CLI click.
-The `src/` app initially showed **Pokaż 67**; clicking displayed **67**; no app crash
-was reported. HAP size was 122242 bytes. Verification files and screenshots remain
+The initial `src/` demo displayed **67** on a button click. The current frontend is
+Harmony Create → staged capability planning → Care Guardian placeholder. All three
+screens, prompt editing, microphone preview, reset and cancellation were verified;
+no app crash was reported. Latest HAP size: 225070 bytes. Verification files and screenshots remain
 local in `suggested-host-venv/out/`, which is ignored by Git.
 
 ✅ TESTED GPS injection command returned success. Location delivery to an app,
@@ -48,3 +50,7 @@ Duplicate backups and the organizer-repository checkout were removed after the
 working environment was verified. Challenge resources bundled with `src/` and
 PDF rules in `docs/` remain. The original smoke-test installation outside this
 repository was not removed.
+
+Current UI evidence: `suggested-host-venv/out/harmony-create/` (ignored). The flow
+uses a local demo planner, not AI or actual health/watch capabilities. Reduced-motion
+support is guarded for API23+; toggling the system preference was not tested.
