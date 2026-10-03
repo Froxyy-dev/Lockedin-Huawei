@@ -5,12 +5,21 @@ import { NativeAudio } from '../care/NativeAudio';
 import { ShakeTrigger } from '../care/ShakeTrigger';
 import { VoiceConversation, CareConfig } from '../care/VoiceConversation';
 
+interface ConversationTurn {
+  id: number;
+  speaker: string;
+  text: string;
+  grandma: boolean;
+}
+
 @Entry
 @Component
 struct Index {
   @State private title: string = 'Care Guardian';
   @State private message: string = 'Shake three times. I am here for you.';
-  @State private transcript: string = '';
+  @State private conversation: ConversationTurn[] = [];
+  private nextTurnId: number = 0;
+  private conversationScroller: Scroller = new Scroller();
   @State private busy: boolean = false;
   @State private showAudioOptions: boolean = false;
   @State private laptopAudio: boolean = true;
@@ -57,12 +66,13 @@ struct Index {
 
   private async begin(): Promise<void> {
     if (this.busy || !this.config) { return; }
-    this.busy = true; this.transcript = '';
+    this.busy = true; this.conversation = [];
     try {
       if (!this.laptopAudio && !(await this.permission())) { throw new Error('Microphone permission denied'); }
       await this.voice.start(this.config, this.getUIContext().getHostContext() as common.UIAbilityContext, this.laptopAudio,
         (message: string): void => { if (this.alive) { this.message = message; } },
-        (text: string): void => { if (this.alive) { this.transcript = text; } });
+        (text: string): void => { if (this.alive) { this.appendTurn(text); } },
+        (): void => { if (this.alive) { this.busy = false; this.shake.arm(); } });
     } catch (error) {
       this.message = 'Error: ' + (error as Error).message;
       hilog.error(0x0001, 'CareGuardian', 'START error %{public}s', JSON.stringify(error));
@@ -80,73 +90,96 @@ struct Index {
     finally { this.busy = false; this.shake.arm(); }
   }
 
+  private appendTurn(text: string): void {
+    const grandma = text.startsWith('You: ');
+    const prefix = grandma ? 'You: ' : 'Care Guardian: ';
+    const turn: ConversationTurn = {
+      id: this.nextTurnId++, speaker: grandma ? 'Grandma' : 'Care Guardian',
+      text: text.startsWith(prefix) ? text.substring(prefix.length) : text, grandma: grandma
+    };
+    this.conversation = [...this.conversation, turn];
+    setTimeout((): void => {
+      if (this.alive) { this.conversationScroller.scrollEdge(Edge.Bottom); }
+    }, 80);
+  }
+
+  private statusText(): string {
+    if (this.message === 'Care Guardian is speaking') { return 'Speaking'; }
+    if (this.message === 'Shake three times. I am here for you.') { return 'Ready'; }
+    return this.message;
+  }
+
   build() {
-    Scroll() {
-      Column({ space: 18 }) {
-        Row({ space: 10 }) {
-          Image($r('app.media.guardian')).width(40).height(40).borderRadius(12)
-          Text('CARE GUARDIAN').fontSize(12).fontWeight(FontWeight.Bold)
-            .fontColor('#416393').letterSpacing(1.5)
-        }.width('100%').gesture(
-          LongPressGesture({ repeat: false }).onAction((): void => { this.showAudioOptions = !this.showAudioOptions; })
-        )
+    Column({ space: 20 }) {
+      Row({ space: 12 }) {
+        Image($r('app.media.guardian')).width(46).height(46).borderRadius(14)
+        Column({ space: 3 }) {
+          Text(this.title).fontSize(25).fontWeight(FontWeight.Bold).fontColor('#18263C')
+          Text('Here with you.').fontSize(14).fontColor('#526784')
+        }.alignItems(HorizontalAlign.Start)
+        Blank()
+      }.width('100%').gesture(
+        LongPressGesture({ repeat: false }).onAction((): void => { this.showAudioOptions = !this.showAudioOptions; })
+      )
 
-        Column({ space: 8 }) {
-          Text(this.title).fontSize(36).fontWeight(FontWeight.Bold).fontColor('#18263C').width('100%')
-          Text('A little reassurance. Help when it matters.')
-            .fontSize(16).fontColor('#526784').width('100%')
-        }.width('100%')
+      Row({ space: 8 }) {
+        Circle().width(7).height(7).fill(this.busy ? '#246BFD' : '#7C90AA')
+        Text(this.statusText()).fontSize(14).fontColor('#526784').layoutWeight(1)
+      }.width('100%').padding({ left: 4, right: 4 })
 
-        Column({ space: 16 }) {
-          Row() {
-            Text(this.busy ? '✦' : '♡').fontSize(42).fontColor('#246BFD')
-            Blank()
-            Text(this.busy ? 'IN PROGRESS' : 'READY TO CHECK IN')
-              .fontSize(11).fontWeight(FontWeight.Bold).fontColor('#416393').letterSpacing(1)
-          }.width('100%')
-          Text(this.message).fontSize(22).fontWeight(FontWeight.Medium)
-            .fontColor('#18263C').width('100%')
-          Text(this.busy ? 'Your check-in is underway.' : 'Shake three times to start a check-in.')
-            .fontSize(14).fontColor('#526784').width('100%')
-        }.width('100%').padding(24).backgroundColor('#FFFFFF').borderRadius(24)
+      if (this.busy || this.conversation.length > 0) {
+        Column({ space: 14 }) {
+          Text('CONVERSATION').fontSize(11).fontWeight(FontWeight.Bold)
+            .fontColor('#526784').letterSpacing(1.4).width('100%')
+          Scroll(this.conversationScroller) {
+            Column({ space: 14 }) {
+              ForEach(this.conversation, (turn: ConversationTurn) => {
+                Row() {
+                  if (turn.grandma) { Blank().width(24) }
+                  Column({ space: 7 }) {
+                    Text(turn.speaker).fontSize(12).fontWeight(FontWeight.Medium)
+                      .fontColor(turn.grandma ? '#315FB3' : '#526784').width('100%')
+                    Text(turn.text).fontSize(20).fontColor('#18263C').width('100%')
+                  }.layoutWeight(1).padding(16).borderRadius(22)
+                    .backgroundColor(turn.grandma ? '#E8EFFD' : '#FFFFFF')
+                  if (!turn.grandma) { Blank().width(24) }
+                }.width('100%')
+              }, (turn: ConversationTurn): string => turn.id.toString())
+              if (this.conversation.length === 0) {
+                Text('Your conversation will appear here.').fontSize(17).fontColor('#526784')
+                  .width('100%').padding({ top: 20 })
+              }
+            }.width('100%').padding({ bottom: 20 })
+          }.layoutWeight(1).width('100%').align(Alignment.Top).scrollBar(BarState.Off)
+        }.layoutWeight(1).width('100%')
+      } else {
+        Column({ space: 14 }) {
+          Image($r('app.media.guardian')).width(76).height(76).borderRadius(23)
+          Text('I am here for you.').fontSize(28).fontWeight(FontWeight.Medium).fontColor('#18263C')
+          Text('Shake three times when you need me.').fontSize(17).fontColor('#526784')
+            .textAlign(TextAlign.Center)
+        }.layoutWeight(1).width('100%').justifyContent(FlexAlign.Center)
+      }
 
-        if (this.transcript.length > 0) {
-          Column({ space: 8 }) {
-            Text('CONVERSATION').fontSize(11).fontWeight(FontWeight.Bold)
-              .fontColor('#416393').letterSpacing(1)
-            Text(this.transcript).fontSize(17).fontColor('#243B5C').maxLines(5)
-              .width('100%')
-          }.width('100%').padding(20).backgroundColor('#FFFFFF').borderRadius(20)
-        }
-
-        if (this.busy) {
-          Button('End / Reset')
-            .width('100%').height(58).fontSize(19).backgroundColor('#246BFD')
-            .onClick((): void => {
+      if (this.showAudioOptions) {
+        Column({ space: 12 }) {
+          Text('AUDIO OPTIONS').fontSize(11).fontWeight(FontWeight.Bold).fontColor('#526784').width('100%')
+          if (this.busy) {
+            Button('Stop session').onClick((): void => {
               this.voice.stop(); this.diagnostic.stop(); this.busy = false; this.shake.arm();
-              this.message = 'Shake three times. I am here for you.';
+              this.message = 'Check-in complete';
             })
-        }
-
-        if (this.showAudioOptions) {
-          Column({ space: 16 }) {
-            Text('AUDIO OPTIONS').fontSize(11).fontWeight(FontWeight.Bold)
-              .fontColor('#416393').letterSpacing(1).width('100%')
-            Button('Test native audio').fontSize(15).enabled(!this.busy)
-              .onClick((): void => { this.audioCheck(); })
-            Row({ space: 12 }) {
-              Column({ space: 4 }) {
-                Text('Laptop audio fallback').fontSize(16).fontWeight(FontWeight.Medium)
-                  .fontColor('#18263C')
-                Text('Use only when native audio is unavailable.')
-                  .fontSize(13).fontColor('#526784')
-              }.layoutWeight(1)
-              Toggle({ type: ToggleType.Switch, isOn: this.laptopAudio }).enabled(!this.busy)
-                .onChange((value: boolean): void => { this.laptopAudio = value; })
-            }.width('100%')
-          }.width('100%').padding(20).backgroundColor('#FFFFFF').borderRadius(20)
-        }
-      }.width('100%').padding({ top: 26, bottom: 28, left: 24, right: 24 })
-    }.width('100%').height('100%').backgroundColor('#F5F7FB')
+          }
+          Button('Test native audio').fontSize(15).enabled(!this.busy)
+            .onClick((): void => { this.audioCheck(); })
+          Row({ space: 12 }) {
+            Text('Laptop audio').fontSize(16).fontColor('#18263C').layoutWeight(1)
+            Toggle({ type: ToggleType.Switch, isOn: this.laptopAudio }).enabled(!this.busy)
+              .onChange((value: boolean): void => { this.laptopAudio = value; })
+          }.width('100%')
+        }.width('100%').padding(18).backgroundColor('#FFFFFF').borderRadius(20)
+      }
+    }.width('100%').height('100%').padding({ top: 24, bottom: 24, left: 24, right: 24 })
+      .backgroundColor('#F5F7FB')
   }
 }

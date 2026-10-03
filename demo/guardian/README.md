@@ -54,7 +54,7 @@ Build/install/UI launch are validated separately from placing calls; launching t
 
 ## Demo presentation
 
-Launcher name and icon are Care Guardian. Audio diagnostics are hidden by default; long-press the top Care Guardian header to reveal them. Laptop microphone/speakers remain the default. Three shakes begin the real test; End / Reset stops it.
+Launcher name and icon are Care Guardian. Audio diagnostics are hidden by default; long-press the top Care Guardian header to reveal them. Laptop microphone/speakers remain the default. Three shakes begin the real test; Session controls are available only in hidden audio options (long-press the header).
 
 ## Background shake wake on the emulator
 
@@ -68,3 +68,9 @@ The native accelerometer listener remains active after pressing Home. Three impu
 This is a **host-assisted emulator demo**, not a privileged standalone background-launch feature. It needs the laptop backend/HDC bridge and the native process alive; force-stop, process eviction, device reboot, lock-screen behavior and prolonged background suspension are not covered. Background startup of ordinary apps is restricted; see the local API 24 `application/UIAbilityContext.d.ts` and [Huawei UIAbilityContext documentation](https://developer.huawei.com/consumer/en/doc/harmonyos-references-V14/js-apis-inner-application-uiabilitycontext-V14).
 
 Validated on this emulator: Home → native three-shake event → HDC foreground launch → pending check-in attempts backend connection, retaining the same PID. The voice backend was intentionally stopped for this wake test, so the expected connection error confirmed entry into the check-in without creating a live voice session/call. Backend and bridge were then restored, with the app left on Home and no session active. Restarting the bridge discards existing shake logs. `stop-runtime` stops the backend and its bridge together. For wake-only debugging: `./demo/guardian/dev wake-bridge` (Ctrl+C to stop).
+
+## Conversation-first demo screen
+
+The primary view shows an ordered, scrollable history of the current check-in, with Grandma and Care Guardian speech in separate bubbles. Voice status is a small row below the header. No Start or End/Reset button appears in the presentation UI. History remains visible after disconnect and clears when a new shake-triggered check-in begins; it is held in memory and not persisted to disk. Long-press the header for the hidden Stop session control. Closed sessions automatically re-arm shaking.
+
+UI validation uses a local ignored fixture with representative provider events, not a real phone call. Screenshots: `.local/conversation.jpeg` and `.local/conversation-compact.jpeg`.

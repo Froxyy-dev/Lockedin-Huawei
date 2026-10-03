@@ -27,6 +27,7 @@ export class VoiceConversation {
   private config?: CareConfig;
   private sessionId: string = '';
   private active: boolean = false;
+  private onEnded?: () => void;
   private callFinished: boolean = false;
   private codec: util.Base64Helper = new util.Base64Helper();
 
@@ -44,15 +45,15 @@ export class VoiceConversation {
   }
 
   async start(config: CareConfig, context: common.UIAbilityContext, laptop: boolean,
-    status: (message: string) => void, transcript: (message: string) => void): Promise<void> {
-    this.config = config; this.active = true; this.callFinished = false;
+    status: (message: string) => void, transcript: (message: string) => void, ended?: () => void): Promise<void> {
+    this.config = config; this.onEnded = ended; this.active = true; this.callFinished = false;
     status('Connecting to Care Guardian…');
     const response = JSON.parse(await this.post('/sessions', JSON.stringify({ appId: config.appId }))) as SessionResponse;
     if (!this.active) { return; }
     this.sessionId = response.id;
     const socket = webSocket.createWebSocket(); this.socket = socket;
     socket.on('message', (error: BusinessError, value: string | ArrayBuffer): void => {
-      if (error || typeof value !== 'string') { return; }
+      if (this.socket !== socket || error || typeof value !== 'string') { return; }
       const event = JSON.parse(value) as CareEvent;
       if (event.type === 'audio' && event.audio_event) {
         status('Care Guardian is speaking');
@@ -75,8 +76,13 @@ export class VoiceConversation {
       } else if (event.type === 'care_error') { status('Error: ' + event.message); this.stop(); }
       hilog.info(0x0001, 'CareGuardian', 'EVENT %{public}s', event.type);
     });
-    socket.on('error', (error: BusinessError): void => { status('Connection error ' + error.code); this.stop(); });
-    socket.on('close', (): void => { this.audio.stop(); if (this.active) { this.active = false; if (!this.callFinished) { status('Session ended — tap Reset to try again'); } } });
+    socket.on('error', (error: BusinessError): void => { if (this.socket !== socket) { return; } status('Connection error ' + error.code); this.stop(); });
+    socket.on('close', (): void => {
+      if (this.socket !== socket) { return; }
+      this.audio.stop();
+      if (this.active && !this.callFinished) { status('Check-in complete'); }
+      this.finish();
+    });
     await socket.connect(config.runtimeUrl.replace('http', 'ws') + response.wsPath + (laptop ? '?source=laptop' : ''),
       { header: { 'Authorization': 'Bearer ' + config.token } });
     if (!laptop) {
@@ -86,11 +92,17 @@ export class VoiceConversation {
         }
       });
     }
-    status(laptop ? 'Listening · laptop audio bridge' : 'Listening · native microphone');
+    status('Listening');
+  }
+
+  private finish(): void {
+    this.active = false;
+    const ended = this.onEnded; this.onEnded = undefined;
+    if (ended) { ended(); }
   }
 
   async stop(): Promise<void> {
-    this.active = false;
+    this.finish();
     const socket = this.socket; this.socket = undefined;
     if (socket) { try { await socket.send(JSON.stringify({ type: 'care_end' })); await socket.close(); } catch (error) {} }
     await this.audio.stop();
