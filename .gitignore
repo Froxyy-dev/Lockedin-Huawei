@@ -11,3 +11,5 @@
 *.pem
 
 /src/entry/src/main/resources/rawfile/bot.json
+
+/.twilio_tokens

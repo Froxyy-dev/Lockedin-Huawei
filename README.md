@@ -1,9 +1,9 @@
 # Lockedin-Huawei
 
 Native ArkTS/ArkUI app for the Huawei HackYeah challenge. **The Missing App** lets
-a user describe a need, previews a staged composition of Harmony capabilities,
-and opens the **Care Guardian** placeholder. Application source lives in [`src/`](src/).
-Planning is a local mock; no AI/backend, health/watch integration or recording is implemented.
+a user describe a need, submit it to a local generation backend,
+and open the generated native application. Application source lives in [`src/`](src/).
+The capability executor accepts a supplied plan; the planner is developed separately. Care Guardian supports a tested laptop voice bridge and caregiver calling. Real health/watch integration is not implemented.
 
 The Linux development environment is the independent
 [`suggested-host-venv`](https://github.com/szymon-hajderek/suggested-host-venv)
@@ -71,27 +71,11 @@ the version pinned by the main repository. That command does not upgrade upstrea
 Develop and publish environment changes in its own repository before committing
 its new pointer here; a local-only submodule commit cannot be cloned by teammates.
 
-## Frontend demo
+## Frontend and Care Guardian demo
 
-Editable prompt → **Create with Harmony** → 3.5-second capability planning preview
-→ **Open Care Guardian**. The back controls reset the flow and cancel pending timers.
-The microphone briefly highlights and logs a preview action; it does not record.
+Editable prompt → Create → real backend status → Open your app. The prompt microphone remains a visual preview; Care Guardian's voice runtime uses a separately configured audio bridge. For a plan-based Care Guardian generation, use the CLI recipe in [Care Guardian setup](suggested-host-venv/docs/CARE_GUARDIAN.md). The planner owner must attach the plan to the client request; the current Create screen submits a prompt only.
 
-Components are in `src/entry/src/main/ets/components/`; design tokens in `theme/`;
-`model/HarmonyPlanner.ets` contains the typed plan and explicit demo fixture. Replace
-the mock planner adapter when connecting a backend; page components consume the
-plan rather than backend details. Edited prompts are echoed as the mock goal; the
-capabilities and Care Guardian result remain the same demo fixture.
-
-Reduced-motion preference is read through the SDK's API23 accessibility method
-with a guarded fallback on older devices. Stage timing remains visible; motion is
-disabled when that preference is enabled. The app requests no additional permissions.
-
-Verified on the API23 phone emulator: editable input, microphone log, sequential
-checkmarks, placeholder navigation, result reset and cancellation mid-planning.
-Screenshots and visual iterations are recorded locally under the environment's
-ignored `out/` directory. Fresh emulator keyboards can require one-time setup;
-Celia Basic mode was used without cloud input features.
+Components live in `src/entry/src/main/ets/components/`. Native capability modules and runtime are in the independently versioned environment. SDKs, private generated apps/HAPs, recordings, phone numbers and provider keys are not distributed in Git.
 
 ### Local generator integration
 
@@ -100,3 +84,13 @@ The Create action submits to the local bot API and polls real job status. Config
 Use `suggested-host-venv/dev bot serve` to start the server from its own template. The root `./dev` targets the client emulator `MissingAppClient` (15603); generation verification uses `HOS23` (15601). Run `HDC_TARGET=127.0.0.1:15603 BOT_AGENT_LAUNCH=0 suggested-host-venv/dev bot agent` for delivery. Create → real generation/build → install → Open your app. Back returns to the prompt; it does not cancel a queued server job. Select Claude or Codex in suggested-host-venv/bot/generator.local.conf. Claude cost/turn caps do not apply to Codex.
 
 Client configuration: copy `src/entry/src/main/resources/rawfile/bot.example.json` to `bot.json` in the same folder and replace the placeholder token with the local server BOT_TOKEN. The real bot.json is ignored; keep HAPs containing its token private.
+
+## Get the Care Guardian feature branch
+
+```bash
+git fetch origin
+git switch --track origin/feature/care-guardian-worker
+git submodule update --init --recursive
+```
+
+The feature branch pins the published environment commit; no separate submodule branch checkout is needed to run it. For a fresh clone use `git clone --branch feature/care-guardian-worker --recurse-submodules https://github.com/Froxyy-dev/Lockedin-Huawei.git`. Configure your own `suggested-host-venv/.env.local` from its example and follow [Care Guardian setup](suggested-host-venv/docs/CARE_GUARDIAN.md). Physical phones need signing; emulator installation is verified.
