@@ -81,9 +81,24 @@ Components live in `src/entry/src/main/ets/components/`. Native capability modul
 
 The Create action submits to the local bot API and polls real job status. Configuration is read from ignored `src/entry/src/main/resources/rawfile/bot.json` (`baseUrl`, `token`); never commit this file or a HAP containing this local token. Current emulator URL: `http://10.0.2.2:8787`.
 
-Use `suggested-host-venv/dev bot serve` to start the server from its own template. The root `./dev` targets the client emulator `MissingAppClient` (15603); generation verification uses `HOS23` (15601). Run `HDC_TARGET=127.0.0.1:15603 BOT_AGENT_LAUNCH=0 suggested-host-venv/dev bot agent` for delivery. Create → real generation/build → install → Open your app. Back returns to the prompt; it does not cancel a queued server job. Select Claude or Codex in suggested-host-venv/bot/generator.local.conf. Claude cost/turn caps do not apply to Codex.
+Use `suggested-host-venv/dev bot serve` to start the server from its own template. The root `./dev` targets the client emulator `MissingAppClient` (15603); generation verification uses `HOS23` (15601). Run `HDC_TARGET=127.0.0.1:15603 BOT_AGENT_LAUNCH=0 suggested-host-venv/dev bot agent` for delivery. Create → real generation/build → install → Open your app. Back returns to the prompt; it does not cancel a queued server job. Select Claude or Codex in suggested-host-venv/bot/generator.local.conf. Claude runs Opus with a subagent cap; Codex keeps its own timeout and repair settings.
 
 Client configuration: copy `src/entry/src/main/resources/rawfile/bot.example.json` to `bot.json` in the same folder and replace the placeholder token with the local server BOT_TOKEN. The real bot.json is ignored; keep HAPs containing its token private.
+
+## Harness: creations, specs and versioned builds (branch `harness-client`)
+
+The **Harness** button opens the creations flow: describe a problem → read the planner's plain-language spec →
+refine or accept → the worker builds the app → open it. Every creation is a git repository on the server, with one
+tagged spec and one tagged build per revision, so any version can be inspected or diffed.
+
+```bash
+suggested-host-venv/dev bot serve        # build server (:8787)
+suggested-host-venv/dev harness serve    # harness API (:8788): planner, revisions, builds
+```
+
+Client configuration: copy `src/entry/src/main/resources/rawfile/harness.example.json` to `harness.json` and set the
+local token (the real file is ignored). Design and API: [`suggested-host-venv/docs/HARNESS.md`](suggested-host-venv/docs/HARNESS.md).
+Client tests: [`tests/README.md`](tests/README.md).
 
 ## Get the Care Guardian feature branch
 

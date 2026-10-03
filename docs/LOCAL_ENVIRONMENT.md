@@ -2,7 +2,7 @@
 
 Run `./dev` from the Lockedin-Huawei root. It delegates to the
 `suggested-host-venv` submodule and selects the application in `src/`.
-The submodule is pinned to tested commit `f506e673add089f4e500a498cf90d19e66dac9f2`.
+The submodule is pinned to the tested commit recorded in this repository (`git submodule status`).
 
 | Component | Tested version |
 |---|---|
