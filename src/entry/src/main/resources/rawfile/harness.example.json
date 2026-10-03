@@ -1,0 +1,4 @@
+{
+  "baseUrl": "http://10.0.2.2:8788",
+  "token": "REPLACE_WITH_LOCAL_HARNESS_TOKEN"
+}
