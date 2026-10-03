@@ -27,7 +27,7 @@ struct Index {
       this.config = JSON.parse(util.TextDecoder.create('utf-8').decodeWithStream(data)) as CareConfig;
       this.title = this.config.name; this.laptopAudio = this.config.audioSource !== 'native';
       try { this.shake.start((): void => { this.begin(); }); }
-      catch (error) { this.message = 'Shake unavailable. Use Start check-in.'; }
+      catch (error) { this.message = 'Shake unavailable on this device.'; }
     }).catch((error: Error): void => { this.message = 'Configuration error: ' + error.message; });
   }
 
@@ -107,12 +107,14 @@ struct Index {
           }.width('100%').padding(20).backgroundColor('#FFFFFF').borderRadius(20)
         }
 
-        Button(this.busy ? 'End / Reset' : 'Start check-in')
-          .width('100%').height(58).fontSize(19).backgroundColor('#246BFD')
-          .onClick((): void => {
-            if (this.busy) { this.voice.stop(); this.diagnostic.stop(); this.busy = false; this.shake.arm(); this.message = 'Shake three times. I am here for you.'; }
-            else { this.begin(); }
-          })
+        if (this.busy) {
+          Button('End / Reset')
+            .width('100%').height(58).fontSize(19).backgroundColor('#246BFD')
+            .onClick((): void => {
+              this.voice.stop(); this.diagnostic.stop(); this.busy = false; this.shake.arm();
+              this.message = 'Shake three times. I am here for you.';
+            })
+        }
 
         if (this.showAudioOptions) {
           Column({ space: 16 }) {

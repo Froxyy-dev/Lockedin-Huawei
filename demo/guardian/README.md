@@ -23,7 +23,7 @@ git submodule update --init --recursive
 ./demo/guardian/dev shot demo/guardian/.local/guardian.jpeg
 ```
 
-Start check-in initiates a **real** ElevenLabs voice session using laptop microphone/speakers by default. Say “No, I don't feel well”, then “I feel dizzy”. When asked whether to contact the caregiver, silence or an unrelated response leads to a real phone call. The four-second window starts after the question audio finishes; location acquisition and provider submission can add delay. Explicit refusal prevents automatic escalation. OpenAI checks response relevance. This is a hackathon demonstration, not a medical safety system.
+Three shakes initiate a **real** ElevenLabs voice session using laptop microphone/speakers by default. Say “No, I don't feel well”, then “I feel dizzy”. When asked whether to contact the caregiver, silence or an unrelated response leads to a real phone call. The four-second window starts after the question audio finishes; location acquisition and provider submission can add delay. Explicit refusal prevents automatic escalation. OpenAI checks response relevance. This is a hackathon demonstration, not a medical safety system.
 
 ```bash
 ./demo/guardian/dev stop-runtime  # stops this demo only; an existing phone call is independent
@@ -48,10 +48,10 @@ Build/install/UI launch are validated separately from placing calls; launching t
 ## Validation of this snapshot
 
 - Lint: no defects; official Hvigor build successful, unsigned HAP 190709 bytes. Compiler warnings remain for legacy native-audio API calls.
-- Installed and launched `com.hackyeah.guardian.demo` on `127.0.0.1:15603`; UI shows `Start check-in` with laptop audio enabled. Screenshot visually inspected at `.local/guardian.jpeg`.
+- Installed and launched `com.hackyeah.guardian.demo` on `127.0.0.1:15603`; UI shows the shake-to-start screen with laptop audio enabled. Screenshot visually inspected at `.local/guardian.jpeg`.
 - Dedicated backend `/health` responds on port 8789; 14 isolated backend tests pass (mocked external calls).
 - No new live voice session or phone call was started during isolation. End-to-end behavior is inherited from the previously tested app/runtime and still needs a live retest on this dedicated configuration.
 
 ## Demo presentation
 
-Launcher name and icon are Care Guardian. Audio diagnostics are hidden by default; long-press the top Care Guardian header to reveal them. Laptop microphone/speakers remain the default. Start check-in begins the real test; End / Reset stops it.
+Launcher name and icon are Care Guardian. Audio diagnostics are hidden by default; long-press the top Care Guardian header to reveal them. Laptop microphone/speakers remain the default. Three shakes begin the real test; End / Reset stops it.
