@@ -1,7 +1,7 @@
 import { router } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { HarnessClient, Project } from '../model/HarnessClient';
+import { HarnessClient, Project, describeError } from '../model/HarnessClient';
 import { HarmonyTheme } from '../theme/DesignTokens';
 
 interface CreationPageParams {
@@ -55,7 +55,7 @@ struct CreationsPage {
       this.client = new HarnessClient(config);
       this.projects = await this.client.projects();
     } catch (err) {
-      this.error = 'Could not load creations: ' + String(err);
+      this.error = 'Could not load creations: ' + describeError(err);
       hilog.error(0x0001, 'Harness', 'load projects failed: %{public}s', this.error);
     } finally {
       this.loading = false;
@@ -77,7 +77,7 @@ struct CreationsPage {
       this.newName = '';
       this.openProject(project.id);
     } catch (err) {
-      this.error = 'Could not create: ' + String(err);
+      this.error = 'Could not create: ' + describeError(err);
     } finally {
       this.creating = false;
     }

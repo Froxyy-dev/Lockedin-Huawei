@@ -1,4 +1,5 @@
 import { http } from '@kit.NetworkKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS';
 
@@ -125,7 +126,7 @@ export class HarnessClient {
       const response = await req.request(this.config.baseUrl + path, {
         method: method,
         header: headers,
-        extraData: body ?? '',
+        extraData: body ?? (method === http.RequestMethod.POST ? '{}' : ''),
         connectTimeout: 10000,
         readTimeout: 40000
       });
@@ -174,10 +175,22 @@ export class HarnessClient {
   }
 
   async accept(id: string, n: number): Promise<AcceptResult> {
-    return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/accept', http.RequestMethod.POST, '')) as AcceptResult;
+    return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/accept', http.RequestMethod.POST, '{}')) as AcceptResult;
   }
 
   async diff(id: string, n: number): Promise<DiffResult> {
     return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/diff', http.RequestMethod.GET)) as DiffResult;
   }
+}
+
+/** Human-readable text for anything a failed request can throw (Error, BusinessError, string). */
+export function describeError(err: Object): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  const be = err as BusinessError;
+  if (be !== null && be !== undefined && typeof be.code === 'number') {
+    return 'error ' + be.code + (be.message ? ': ' + be.message : '');
+  }
+  return String(err);
 }

@@ -1,7 +1,7 @@
 import { router } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { HarnessClient, ProjectDetail, Revision, RevisionSummary } from '../model/HarnessClient';
+import { HarnessClient, ProjectDetail, Revision, RevisionSummary, describeError } from '../model/HarnessClient';
 import { HarmonyTheme } from '../theme/DesignTokens';
 import { SpecPageParams } from './SpecPage';
 
@@ -90,7 +90,7 @@ struct CreationPage {
         await this.loadRevision(detail.current_revision);
       }
     } catch (err) {
-      this.error = 'Could not load creation: ' + String(err);
+      this.error = 'Could not load creation: ' + describeError(err);
       hilog.error(0x0001, 'Harness', 'load project failed: %{public}s', this.error);
     } finally {
       this.loading = false;
@@ -108,7 +108,7 @@ struct CreationPage {
         this.cancelPolling();
       }
     } catch (err) {
-      this.error = 'Could not load revision: ' + String(err);
+      this.error = 'Could not load revision: ' + describeError(err);
     }
   }
 
@@ -129,7 +129,7 @@ struct CreationPage {
       this.timers.push(setTimeout(() => { this.poll(n, generation); }, 3000));
     } catch (err) {
       if (generation === this.generation) {
-        this.error = 'Build status check failed: ' + String(err);
+        this.error = 'Build status check failed: ' + describeError(err);
       }
     }
   }
@@ -148,7 +148,7 @@ struct CreationPage {
         this.project.current_revision = revision.n;
       }
     } catch (err) {
-      this.error = 'Could not create idea: ' + String(err);
+      this.error = 'Could not create idea: ' + describeError(err);
     } finally {
       this.creatingDraft = false;
     }
@@ -168,7 +168,7 @@ struct CreationPage {
         this.project.current_revision = revision.n;
       }
     } catch (err) {
-      this.error = 'Could not send changes: ' + String(err);
+      this.error = 'Could not send changes: ' + describeError(err);
     } finally {
       this.refining = false;
     }
@@ -184,7 +184,7 @@ struct CreationPage {
       this.updateRevisionState(n, 'building');
       await this.loadRevision(n);
     } catch (err) {
-      this.error = 'Could not start build: ' + String(err);
+      this.error = 'Could not start build: ' + describeError(err);
     } finally {
       this.accepting = false;
     }
@@ -199,7 +199,7 @@ struct CreationPage {
       const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
       await context.startAbility({ bundleName: this.project.bundle, abilityName: 'EntryAbility', moduleName: 'entry' });
     } catch (err) {
-      this.error = 'Could not open app: ' + String(err);
+      this.error = 'Could not open app: ' + describeError(err);
     }
   }
 
