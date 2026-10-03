@@ -12,6 +12,7 @@ struct Index {
   @State private message: string = 'Shake three times. I am here for you.';
   @State private transcript: string = '';
   @State private busy: boolean = false;
+  @State private showAudioOptions: boolean = false;
   @State private laptopAudio: boolean = true;
   private shake: ShakeTrigger = new ShakeTrigger();
   private voice: VoiceConversation = new VoiceConversation();
@@ -71,11 +72,12 @@ struct Index {
     Scroll() {
       Column({ space: 18 }) {
         Row({ space: 10 }) {
-          Text('♥').fontSize(18).fontColor('#FFFFFF').textAlign(TextAlign.Center)
-            .width(34).height(34).backgroundColor('#246BFD').borderRadius(12)
+          Image($r('app.media.guardian')).width(40).height(40).borderRadius(12)
           Text('CARE GUARDIAN').fontSize(12).fontWeight(FontWeight.Bold)
             .fontColor('#416393').letterSpacing(1.5)
-        }.width('100%')
+        }.width('100%').gesture(
+          LongPressGesture({ repeat: false }).onAction((): void => { this.showAudioOptions = !this.showAudioOptions; })
+        )
 
         Column({ space: 8 }) {
           Text(this.title).fontSize(36).fontWeight(FontWeight.Bold).fontColor('#18263C').width('100%')
@@ -112,25 +114,24 @@ struct Index {
             else { this.begin(); }
           })
 
-        Column({ space: 16 }) {
-          Text('AUDIO OPTIONS').fontSize(11).fontWeight(FontWeight.Bold)
-            .fontColor('#416393').letterSpacing(1).width('100%')
-          Button('Test native audio').fontSize(15).enabled(!this.busy)
-            .onClick((): void => { this.audioCheck(); })
-          Row({ space: 12 }) {
-            Column({ space: 4 }) {
-              Text('Laptop audio fallback').fontSize(16).fontWeight(FontWeight.Medium)
-                .fontColor('#18263C')
-              Text('Use only when native audio is unavailable.')
-                .fontSize(13).fontColor('#526784')
-            }.layoutWeight(1)
-            Toggle({ type: ToggleType.Switch, isOn: this.laptopAudio }).enabled(!this.busy)
-              .onChange((value: boolean): void => { this.laptopAudio = value; })
-          }.width('100%')
-        }.width('100%').padding(20).backgroundColor('#FFFFFF').borderRadius(20)
-
-        Text('Demo companion · not an emergency service')
-          .fontSize(12).fontColor('#526784').width('100%').textAlign(TextAlign.Center)
+        if (this.showAudioOptions) {
+          Column({ space: 16 }) {
+            Text('AUDIO OPTIONS').fontSize(11).fontWeight(FontWeight.Bold)
+              .fontColor('#416393').letterSpacing(1).width('100%')
+            Button('Test native audio').fontSize(15).enabled(!this.busy)
+              .onClick((): void => { this.audioCheck(); })
+            Row({ space: 12 }) {
+              Column({ space: 4 }) {
+                Text('Laptop audio fallback').fontSize(16).fontWeight(FontWeight.Medium)
+                  .fontColor('#18263C')
+                Text('Use only when native audio is unavailable.')
+                  .fontSize(13).fontColor('#526784')
+              }.layoutWeight(1)
+              Toggle({ type: ToggleType.Switch, isOn: this.laptopAudio }).enabled(!this.busy)
+                .onChange((value: boolean): void => { this.laptopAudio = value; })
+            }.width('100%')
+          }.width('100%').padding(20).backgroundColor('#FFFFFF').borderRadius(20)
+        }
       }.width('100%').padding({ top: 26, bottom: 28, left: 24, right: 24 })
     }.width('100%').height('100%').backgroundColor('#F5F7FB')
   }

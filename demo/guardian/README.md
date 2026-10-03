@@ -51,3 +51,7 @@ Build/install/UI launch are validated separately from placing calls; launching t
 - Installed and launched `com.hackyeah.guardian.demo` on `127.0.0.1:15603`; UI shows `Start check-in` with laptop audio enabled. Screenshot visually inspected at `.local/guardian.jpeg`.
 - Dedicated backend `/health` responds on port 8789; 14 isolated backend tests pass (mocked external calls).
 - No new live voice session or phone call was started during isolation. End-to-end behavior is inherited from the previously tested app/runtime and still needs a live retest on this dedicated configuration.
+
+## Demo presentation
+
+Launcher name and icon are Care Guardian. Audio diagnostics are hidden by default; long-press the top Care Guardian header to reveal them. Laptop microphone/speakers remain the default. Start check-in begins the real test; End / Reset stops it.
