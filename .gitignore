@@ -1,0 +1,6 @@
+/backups/
+/.hvigor/
+*.p12
+*.p7b
+*.jks
+.env.local

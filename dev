@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Use the downloaded environment to develop the application in this repository.
+set -euo pipefail
+project_root="$(dirname "$(readlink -f "$0")")"
+export HOS_APP="${HOS_APP:-$project_root/src}"
+exec "$project_root/suggested-host-venv/dev" "$@"
