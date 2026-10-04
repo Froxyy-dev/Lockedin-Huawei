@@ -76,6 +76,15 @@ class HarnessContract(unittest.TestCase):
         with urllib.request.urlopen(req, timeout=120) as r:
             return json.loads(r.read())
 
+    def wait_planned(self, pid: str, n: int) -> dict:
+        """Draft/refine return at once in state `planning`; poll until the mocked planner has answered."""
+        for _ in range(100):
+            rev = self.call("GET", f"/projects/{pid}/revisions/{n}")
+            if rev["state"] in ("drafted", "plan_failed"):
+                return rev
+            time.sleep(0.1)
+        self.fail("planning did not finish")
+
     def assertMatches(self, iface: str, payload: dict):
         fields = self.ifaces[iface]
         missing = [f for f, required in fields.items() if required and f not in payload]
@@ -90,8 +99,12 @@ class HarnessContract(unittest.TestCase):
         rev = self.call("POST", f"/projects/{project['id']}/revisions", {"text": "People forget to water plants", "effort": "fast"})
         self.assertMatches("Revision", rev); self.assertMatches("RevisionSummaryInfo", rev["summary"])
         self.assertEqual(rev["effort"], "fast", "the slider's level comes back with the revision")
+        self.assertEqual(self.wait_planned(project["id"], 1)["state"], "drafted")
         rev2 = self.call("POST", f"/projects/{project['id']}/revisions/1/refine", {"feedback": "simpler", "effort": "high"})
         self.assertMatches("Revision", rev2); self.assertEqual(rev2["effort"], "high")
+        self.wait_planned(project["id"], 2)
+        feed = self.call("GET", f"/projects/{project['id']}/revisions/2/progress")
+        self.assertEqual([e["kind"] for e in feed["events"]], ["considering", "rewriting", "planned"])
         detail = self.call("GET", f"/projects/{project['id']}")
         for r in detail["revisions"]:
             self.assertMatches("RevisionSummary", r)
@@ -110,6 +123,7 @@ class HarnessContract(unittest.TestCase):
         """The client once sent an empty body on accept; the server must tolerate '' and '{}'."""
         project = self.call("POST", "/projects", {"name": "Empty body"})
         self.call("POST", f"/projects/{project['id']}/revisions", {"text": "idea"})
+        self.wait_planned(project["id"], 1)
         req = urllib.request.Request(f"http://127.0.0.1:{self.port}/projects/{project['id']}/revisions/1/accept",
                                      data=b"", method="POST", headers={"Authorization": f"Bearer {TOKEN}"})
         with urllib.request.urlopen(req, timeout=30) as r:

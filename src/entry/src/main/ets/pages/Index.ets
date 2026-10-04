@@ -83,8 +83,19 @@ struct Index {
       this.client = new HarnessClient(HarnessClient.loadConfig(context));
       const project = await this.client.createProject(text.split(/\s+/).slice(0, 6).join(' '));
       this.projectId = project.id;
-      const idea: Revision = await this.client.draft(project.id, text);
+      let idea: Revision = await this.client.draft(project.id, text);
+      // The planner works in the background: follow its feed until the plan is ready (or failed).
+      while (idea.state === 'planning') {
+        if (generation !== this.generation) { return; }
+        try {
+          const feed = await this.client.progress(project.id, idea.n);
+          if (feed.events.length > 0) { this.progress = feed.events[feed.events.length - 1].text + '…'; }
+        } catch (_) { /* the next revision read reports real problems */ }
+        await new Promise<void>((resolve: () => void) => { this.timers.push(setTimeout(resolve, 1500)); });
+        idea = await this.client.revision(project.id, idea.n);
+      }
       if (generation !== this.generation) { return; }
+      if (idea.state === 'plan_failed') { throw new Error(idea.error ?? 'the plan could not be made'); }
       const title = idea.summary.title || 'Your app';
       this.plan = { goal: text, experienceName: title, capabilities: [] };
       hilog.info(0x0001, 'MissingApp', 'Project %{public}s spec ready: %{public}s', project.id, title);
