@@ -11,7 +11,7 @@ README.md to update it; publish submodule changes upstream before recording thei
 commit here. Keep application code in src/. Do not commit SDKs, images, caches,
 local environment configuration or secrets.
 
-The harness client screens (`src/.../pages/Creations*`, `CreationPage`, `SpecPage`, `model/HarnessClient.ets`) talk
+The harness client screens (`src/.../pages/Creations*`, `CreationPage`, `SpecPage`, `ProgressPage`, `model/HarnessClient.ets`) talk
 to the harness API described in `suggested-host-venv/docs/HARNESS.md`; their contract tests live in `tests/`.
 
 # Never block, always log
