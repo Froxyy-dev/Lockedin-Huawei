@@ -4,7 +4,9 @@
 !/.gitignore
 !/.gitmodules
 !/AGENTS.md
+!/AI_WORKFLOW.md
 !/README.md
+!/submission
 !/dev
 !/docs
 !/spec.md

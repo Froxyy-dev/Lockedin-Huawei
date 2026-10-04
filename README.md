@@ -1,9 +1,36 @@
-# Lockedin-Huawei
+# The Missing App (Lockedin-Huawei)
 
-Native ArkTS/ArkUI app for the Huawei HackYeah challenge. **The Missing App** lets
-a user describe a need, submit it to a local generation backend,
-and open the generated native application. Application source lives in [`src/`](src/).
-The capability executor accepts a supplied plan; the planner is developed separately. Care Guardian supports a tested laptop voice bridge and caregiver calling. Real health/watch integration is not implemented.
+**HackYeah 2026 · Huawei Challenge "Imagine What's Next" · Theme: Intelligent Experiences, with a Human-Centric purpose.**
+
+**The Missing App** is a native ArkTS/ArkUI HarmonyOS app that makes the app you are missing, from one sentence.
+You describe a need in your words. A planner designs a plain-language spec; you refine it or accept it. An AI
+engineer then builds a native HarmonyOS app inside a versioned git workspace on a headless HarmonyOS toolchain, the
+build server verifies it independently on an emulator (build, clean install, launch, crash check, widget tree), and
+the app lands on your phone with its own name and icon, one tap away. Every spec and every successful build is a git
+tag (`spec-N`, `rev-N`), so any version can be opened or diffed. Generated apps reach paid services (speech, language)
+only through a server-side proxy, so no key ever sits on the phone. Application source lives in [`src/`](src/).
+
+Everything in this repository and in the environment repository was written during the hackathon (first commit
+2026-10-03 16:46). Pre-existing components are listed in [AI_WORKFLOW.md](AI_WORKFLOW.md).
+
+## Submission
+
+| Deliverable | Where |
+|---|---|
+| Source code | This repository (client app) and [`suggested-host-venv`](https://github.com/szymon-hajderek/suggested-host-venv) (environment, planner, harness, workers, service proxy), pinned as a submodule |
+| Setup, build, install, launch | [Clone and install](#clone-and-install) below, then [Harness](#harness-creations-specs-and-versioned-builds-branch-harness-client); versions in [docs/LOCAL_ENVIRONMENT.md](docs/LOCAL_ENVIRONMENT.md) |
+| Working `.hap` | [`submission/the-missing-app-entry-default-unsigned.hap`](submission/the-missing-app-entry-default-unsigned.hap), unsigned debug HAP for the emulator: `./dev install` or `hdc install <file>` |
+| Demo recording | [`submission/demo-the-missing-app.mp4`](submission/demo-the-missing-app.mp4), 2 min 21 s emulator recording: prompt → spec → accept → build → install → using the generated app (PaperPick) → a one-sentence second revision |
+| Architecture and implementation | [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) (how it works, with diagrams), [suggested-host-venv/docs/HARNESS.md](suggested-host-venv/docs/HARNESS.md) (data model, lifecycle, API), [docs/PITCH.md](docs/PITCH.md) |
+| AI workflow and AI feature disclosure | [AI_WORKFLOW.md](AI_WORKFLOW.md) → [src/AI_WORKFLOW.md](src/AI_WORKFLOW.md) |
+| Tests | `python3 -m unittest discover -s tests -t .` (client contract tests, [tests/README.md](tests/README.md)); `suggested-host-venv/dev test unit` and `… integration` (environment) |
+
+Platform capabilities used: the HarmonyOS SDK (API 24), hvigor and hdc drive build, install and launch of the
+generated apps; `startAbility` opens a generated app from The Missing App; generated apps use FormKit home-screen
+cards, PDFKit, MediaKit, ArkWeb and the microphone; workers read the device's real SystemCapabilities (`./dev caps`)
+as ground truth for `canIUse`. Verified on the HarmonyOS 6.1.0 (API 23) emulator. Not done: physical-device signing,
+the emulator microphone, per-user quotas. Care Guardian (an earlier demo on `feature/care-guardian-worker`) uses a
+laptop voice bridge; real health/watch integration is not implemented.
 
 The Linux development environment is the independent
 [`suggested-host-venv`](https://github.com/szymon-hajderek/suggested-host-venv)

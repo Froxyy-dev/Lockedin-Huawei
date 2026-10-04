@@ -13,6 +13,11 @@ This project uses AI-assisted development. Keep this document current and public
 | hmos-* Agent Skills | hackathon repository (`./dev skills`) | ArkTS/ArkUI rules and examples, loaded into the worker as a session plugin |
 | devecocli docs | Huawei devecocli 1.3.4, offline | HarmonyOS guides and FAQs available to the worker without network |
 
+Pre-existing and third-party components (everything else was written during the hackathon, first commit 2026-10-03
+16:46): the organizers' Hackathon Template, `hmos-*` skills and devecocli docs; Huawei's Command Line Tools 6.1.1.280
+and Emulator 26.0.0.402 (downloaded, never redistributed); OpenAI-compatible models, ElevenLabs, Claude Code and Codex
+CLI as services and agents. See the root [`AI_WORKFLOW.md`](../AI_WORKFLOW.md).
+
 ## Important prompts and instructions
 
 - `AGENTS.md` — repository-wide hackathon constraints and working agreement.
