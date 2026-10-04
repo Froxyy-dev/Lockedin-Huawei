@@ -17,6 +17,15 @@ function clock(iso: string): string {
   return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
 }
 
+/** "still working, last news 4 min ago" when the feed has been quiet for a while during a build. */
+function quietNote(feed: ProgressFeed): string {
+  if (feed.state !== 'building' || feed.events.length === 0) { return ''; }
+  const last = new Date(feed.events[feed.events.length - 1].last).getTime();
+  if (isNaN(last)) { return ''; }
+  const minutes = Math.floor((Date.now() - last) / 60000);
+  return minutes >= 2 ? 'Still working · last news ' + minutes + ' min ago' : '';
+}
+
 function headline(state: string): string {
   switch (state) {
     case 'building': return 'Your app is being built';
@@ -128,8 +137,13 @@ struct ProgressPage {
           if (this.feed.state === 'building') {
             LoadingProgress().width(20).height(20).color(HarmonyTheme.accent)
           }
-          Text(headline(this.feed.state)).id('ProgressHeadline').fontSize(16).fontWeight(FontWeight.Medium)
-            .fontColor(HarmonyTheme.ink).layoutWeight(1)
+          Column({ space: 2 }) {
+            Text(headline(this.feed.state)).id('ProgressHeadline').fontSize(16).fontWeight(FontWeight.Medium)
+              .fontColor(HarmonyTheme.ink)
+            if (quietNote(this.feed).length > 0) {
+              Text(quietNote(this.feed)).id('QuietNote').fontSize(12).fontColor(HarmonyTheme.secondary)
+            }
+          }.alignItems(HorizontalAlign.Start).layoutWeight(1)
         }.width('100%').padding(14).borderRadius(16).backgroundColor(Color.White)
         .border({ width: 1, color: HarmonyTheme.border }).margin({ bottom: 10 })
 

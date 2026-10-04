@@ -70,11 +70,17 @@ export interface Revision {
   request?: RevisionRequest;
   job?: RevisionJob;
   error?: string;
+  effort?: string;          // fast | medium | high: the level this revision was planned/built with
 }
 
 export interface AcceptResult {
   job_id: string;
+  effort?: string;
 }
+
+/** The effort levels of the slider (server: effort/). One level sets planner and worker thinking and pace together. */
+export const EFFORT_LEVELS: string[] = ['fast', 'medium', 'high'];
+export const DEFAULT_EFFORT: string = 'medium';
 
 export interface DiffResult {
   stat: string;
@@ -104,10 +110,16 @@ interface CreateProjectRequest {
 
 interface DraftRequest {
   text: string;
+  effort: string;
 }
 
 interface RefineRequest {
   feedback: string;
+  effort: string;
+}
+
+interface AcceptRequest {
+  effort: string;
 }
 
 function withPort(baseUrl: string, port: number): string {
@@ -187,13 +199,13 @@ export class HarnessClient {
     return JSON.parse(await this.request('/projects/' + id, http.RequestMethod.GET)) as ProjectDetail;
   }
 
-  async draft(id: string, text: string): Promise<Revision> {
-    const body: DraftRequest = { text: text };
+  async draft(id: string, text: string, effort: string = DEFAULT_EFFORT): Promise<Revision> {
+    const body: DraftRequest = { text: text, effort: effort };
     return JSON.parse(await this.request('/projects/' + id + '/revisions', http.RequestMethod.POST, JSON.stringify(body))) as Revision;
   }
 
-  async refine(id: string, n: number, feedback: string): Promise<Revision> {
-    const body: RefineRequest = { feedback: feedback };
+  async refine(id: string, n: number, feedback: string, effort: string = DEFAULT_EFFORT): Promise<Revision> {
+    const body: RefineRequest = { feedback: feedback, effort: effort };
     return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/refine', http.RequestMethod.POST, JSON.stringify(body))) as Revision;
   }
 
@@ -205,8 +217,9 @@ export class HarnessClient {
     return await this.request('/projects/' + id + '/revisions/' + n + '/spec', http.RequestMethod.GET);
   }
 
-  async accept(id: string, n: number): Promise<AcceptResult> {
-    return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/accept', http.RequestMethod.POST, '{}')) as AcceptResult;
+  async accept(id: string, n: number, effort: string = DEFAULT_EFFORT): Promise<AcceptResult> {
+    const body: AcceptRequest = { effort: effort };
+    return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/accept', http.RequestMethod.POST, JSON.stringify(body))) as AcceptResult;
   }
 
   /** Stop a building revision: the server stops the worker and restores the last full build. */

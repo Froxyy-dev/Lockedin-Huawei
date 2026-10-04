@@ -1,7 +1,8 @@
 import { router } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { HarnessClient, ProgressEvent, ProjectDetail, Revision, RevisionSummary, describeError } from '../model/HarnessClient';
+import { DEFAULT_EFFORT, HarnessClient, ProgressEvent, ProjectDetail, Revision, RevisionSummary, describeError } from '../model/HarnessClient';
+import { EffortSlider } from '../components/EffortSlider';
 import { HarmonyTheme } from '../theme/DesignTokens';
 import { SpecPageParams } from './SpecPage';
 import { ProgressPageParams } from './ProgressPage';
@@ -50,6 +51,8 @@ struct CreationPage {
   @State cancelling: boolean = false;
   private pollFailures: number = 0;
   @State latestNews: string = '';          // the last line of the progress feed while building
+  @State newsAgeMin: number = 0;           // minutes since that line; long quiet stretches are still work
+  @State effort: string = DEFAULT_EFFORT;  // the slider: planner + engineer thinking and pace, per request
   private projectId: string = '';
   private client?: HarnessClient;
   private generation: number = 0;
@@ -108,6 +111,7 @@ struct CreationPage {
     try {
       const revision = await this.client.revision(this.projectId, n);
       this.current = revision;
+      if (revision.effort) { this.effort = revision.effort; }    // the slider remembers the level of this revision
       hilog.info(0x0001, 'Harness', 'revision %{public}d state=%{public}s phase=%{public}s error=%{public}s', revision.n, revision.state, revision.job?.phase ?? '-', revision.error ?? '-');
       if (revision.state === 'building') {
         this.startPolling(n);
@@ -161,6 +165,8 @@ struct CreationPage {
       if (generation !== this.generation) { return; }
       const events: ProgressEvent[] = feed.events;
       this.latestNews = events.length > 0 ? events[events.length - 1].text : '';
+      const last = events.length > 0 ? new Date(events[events.length - 1].last).getTime() : NaN;
+      this.newsAgeMin = isNaN(last) ? 0 : Math.max(0, Math.floor((Date.now() - last) / 60000));
     } catch (_) {
       // the revision poll already reports connection problems
     }
@@ -173,7 +179,7 @@ struct CreationPage {
     this.creatingDraft = true;
     this.error = '';
     try {
-      const revision = await this.client.draft(this.projectId, text);
+      const revision = await this.client.draft(this.projectId, text, this.effort);
       this.draftPrompt = '';
       this.revisions = [...this.revisions, toSummary(revision)];
       this.current = revision;
@@ -195,7 +201,7 @@ struct CreationPage {
     this.refining = true;
     this.error = '';
     try {
-      const revision = await this.client.refine(this.projectId, this.current.n, feedback);
+      const revision = await this.client.refine(this.projectId, this.current.n, feedback, this.effort);
       this.feedbackText = '';
       this.revisions = [...this.revisions, toSummary(revision)];
       this.current = revision;
@@ -217,7 +223,7 @@ struct CreationPage {
     this.error = '';
     try {
       const n = this.current.n;
-      await this.client.accept(this.projectId, n);
+      await this.client.accept(this.projectId, n, this.effort);
       this.updateRevisionState(n, 'building');
       await this.loadRevision(n);
     } catch (err) {
@@ -311,10 +317,11 @@ struct CreationPage {
                 .id('IdeaPrompt')
                 .height(100).fontSize(15).backgroundColor('#EDF2F8').borderRadius(14)
                 .onChange((value: string) => { this.draftPrompt = value; })
+              EffortSlider({ effort: $effort, interactive: !this.creatingDraft })
               if (this.creatingDraft) {
                 Row({ space: 10 }) {
                   LoadingProgress().width(22).height(22).color(HarmonyTheme.accent)
-                  Text('Thinking… ~20 s').fontSize(14).fontColor(HarmonyTheme.secondary)
+                  Text('Designing your app…').fontSize(14).fontColor(HarmonyTheme.secondary)
                 }
               } else {
                 Button('Create idea', { type: ButtonType.Normal })
@@ -333,6 +340,8 @@ struct CreationPage {
             .width('100%').alignItems(HorizontalAlign.Start).padding(18)
             .borderRadius(20).backgroundColor(Color.White).border({ width: 1, color: HarmonyTheme.border })
 
+            EffortSlider({ effort: $effort, interactive: !this.accepting && !this.refining && this.current.state !== 'building' })
+
             Row({ space: 10 }) {
               Button('Full spec', { type: ButtonType.Normal })
                 .id('FullSpecButton').backgroundColor(HarmonyTheme.softBlue).fontColor(HarmonyTheme.accent)
@@ -347,7 +356,8 @@ struct CreationPage {
             if (this.current.state === 'building') {
               Row({ space: 10 }) {
                 LoadingProgress().width(22).height(22).color(HarmonyTheme.accent)
-                Text(this.latestNews.length > 0 ? this.latestNews : 'Building…')
+                Text((this.latestNews.length > 0 ? this.latestNews : 'Building…')
+                  + (this.newsAgeMin >= 2 ? '  · still working, last news ' + this.newsAgeMin + ' min ago' : ''))
                   .id('BuildNews').fontSize(14).fontColor(HarmonyTheme.secondary).layoutWeight(1)
                   .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                 Button(this.cancelling ? 'Stopping…' : 'Cancel', { type: ButtonType.Normal })

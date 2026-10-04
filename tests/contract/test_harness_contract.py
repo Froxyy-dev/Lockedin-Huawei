@@ -87,16 +87,17 @@ class HarnessContract(unittest.TestCase):
         self.assertMatches("ProjectDetail", self.call("GET", f"/projects/{project['id']}"))
         for p in self.call("GET", "/projects"):
             self.assertMatches("Project", p)
-        rev = self.call("POST", f"/projects/{project['id']}/revisions", {"text": "People forget to water plants"})
+        rev = self.call("POST", f"/projects/{project['id']}/revisions", {"text": "People forget to water plants", "effort": "fast"})
         self.assertMatches("Revision", rev); self.assertMatches("RevisionSummaryInfo", rev["summary"])
-        rev2 = self.call("POST", f"/projects/{project['id']}/revisions/1/refine", {"feedback": "simpler"})
-        self.assertMatches("Revision", rev2)
+        self.assertEqual(rev["effort"], "fast", "the slider's level comes back with the revision")
+        rev2 = self.call("POST", f"/projects/{project['id']}/revisions/1/refine", {"feedback": "simpler", "effort": "high"})
+        self.assertMatches("Revision", rev2); self.assertEqual(rev2["effort"], "high")
         detail = self.call("GET", f"/projects/{project['id']}")
         for r in detail["revisions"]:
             self.assertMatches("RevisionSummary", r)
         self.assertMatches("Revision", self.call("GET", f"/projects/{project['id']}/revisions/2"))
-        acc = self.call("POST", f"/projects/{project['id']}/revisions/2/accept", {})   # no bot configured -> accepted
-        self.assertMatches("AcceptResult", acc)
+        acc = self.call("POST", f"/projects/{project['id']}/revisions/2/accept", {"effort": "medium"})   # no bot configured -> accepted
+        self.assertMatches("AcceptResult", acc); self.assertEqual(acc["effort"], "medium")
         self.assertMatches("DiffResult", self.call("GET", f"/projects/{project['id']}/revisions/2/diff"))
         feed = self.call("GET", f"/projects/{project['id']}/revisions/2/progress")
         self.assertMatches("ProgressFeed", feed)
