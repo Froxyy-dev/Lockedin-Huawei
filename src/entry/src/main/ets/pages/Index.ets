@@ -1,7 +1,6 @@
 import { common } from '@kit.AbilityKit';
-import { util } from '@kit.ArkTS';
 import { router } from '@kit.ArkUI';
-import { BotClient, BotConfig, BotJob } from '../model/BotClient';
+import { HarnessClient, Revision, describeError } from '../model/HarnessClient';
 import { accessibility } from '@kit.AccessibilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { CreatePage } from '../components/CreatePage';
@@ -21,7 +20,9 @@ struct Index {
   @State error: string = '';
   @State ready: boolean = false;
   private generation: number = 0;
-  private client?: BotClient;
+  private client?: HarnessClient;
+  private projectId: string = '';
+  private bundle: string = '';
   private controller: TextAreaController = new TextAreaController();
   private timers: number[] = [];
   private reduceMotion: boolean = false;
@@ -60,66 +61,84 @@ struct Index {
     hilog.info(0x0001, 'HarmonyCreate', 'Demo reset');
   }
 
+  /** One shot through the harness: idea -> planner spec (revision 1) -> accept -> build -> installed -> open. */
   private async beginPlanning(): Promise<void> {
     if (!this.prompt.trim()) { return; }
     this.cancelPlanning();
     const generation = this.generation;
+    const text = this.prompt.trim();
     this.error = '';
     this.ready = false;
-    this.progress = 'Sending your request…';
-    this.plan = { goal: this.prompt.trim(), experienceName: 'Your app', capabilities: [] };
+    this.progress = 'Designing your app…';
+    this.plan = { goal: text, experienceName: 'Your app', capabilities: [] };
     this.stage = 1;
     this.screen = 'planning';
     try {
       const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const content = context.resourceManager.getRawFileContentSync('bot.json');
-      const config = JSON.parse(util.TextDecoder.create('utf-8').decodeToString(content)) as BotConfig;
-      this.client = new BotClient(config);
-      const submitted = await this.client.submit(this.prompt);
+      this.client = new HarnessClient(HarnessClient.loadConfig(context));
+      const project = await this.client.createProject(text.split(/\s+/).slice(0, 6).join(' '));
+      this.projectId = project.id;
+      const idea: Revision = await this.client.draft(project.id, text);
       if (generation !== this.generation) { return; }
-      hilog.info(0x0001, 'MissingApp', 'Submitted job %{public}s', submitted.id);
-      this.progress = 'Request received. Waiting for generator…';
-      this.pollJob(submitted.id, generation, Date.now());
+      const title = idea.summary.title || 'Your app';
+      this.plan = { goal: text, experienceName: title, capabilities: [] };
+      hilog.info(0x0001, 'MissingApp', 'Project %{public}s spec ready: %{public}s', project.id, title);
+      this.progress = 'Designed “' + title + '”. Starting the build…';
+      await this.client.accept(project.id, idea.n);
+      const detail = await this.client.project(project.id);
+      this.bundle = detail.bundle ?? '';
+      this.pollBuild(idea.n, title, generation, Date.now());
     } catch (err) {
       if (generation === this.generation) {
-        this.error = 'Could not send request. Check the local server and connection.';
-        hilog.error(0x0001, 'MissingApp', 'Submit failed: %{public}s', String(err));
+        this.error = 'Could not create your app: ' + describeError(err as Object);
+        hilog.error(0x0001, 'MissingApp', 'Create failed: %{public}s', this.error);
       }
     }
   }
 
-  private async pollJob(id: string, generation: number, started: number): Promise<void> {
+  private phaseText(phase: string | undefined, title: string): string {
+    if (phase === undefined || phase === '' || phase === 'workspace' || phase === 'emulator') { return 'Preparing to build “' + title + '”…'; }
+    if (phase === 'baseline') { return 'Preparing the native project…'; }
+    if (phase.startsWith('agent')) { return 'Writing “' + title + '”…'; }
+    if (phase.startsWith('repair')) { return 'Fixing build errors…'; }
+    if (phase === 'verify') { return 'Building and checking your app…'; }
+    return 'Building “' + title + '”…';
+  }
+
+  private async pollBuild(n: number, title: string, generation: number, started: number): Promise<void> {
     if (generation !== this.generation || !this.client) { return; }
     try {
-      const job: BotJob = await this.client.job(id);
+      const rev: Revision = await this.client.revision(this.projectId, n);
       if (generation !== this.generation) { return; }
-      if (job.status === 'failed') { throw new Error(job.error || 'Generation failed'); }
-      if (job.deployed && !job.deployed.ok) { throw new Error('Installation failed: ' + job.deployed.detail); }
-      if (job.status === 'succeeded' && job.deployed && job.deployed.ok) {
+      if (rev.state === 'failed') { throw new Error(rev.error || 'The build failed'); }
+      if (rev.state === 'built') {
+        this.progress = 'Installing your app…';
         this.ready = true;
-        this.progress = 'Your app is installed and ready';
         return;
       }
-      this.progress = job.status === 'succeeded' ? 'Installing your app…' :
-        job.phase === 'baseline' ? 'Preparing the native project…' :
-        job.phase === 'agent:codex' ? 'Codex is creating your app…' :
-        job.phase === 'verify' ? 'Building and checking your app…' : 'Waiting for generator…';
-      if (Date.now() - started > 600000) { throw new Error('Timed out waiting for generator'); }
-      this.timers.push(setTimeout(() => { this.pollJob(id, generation, started); }, 2500));
+      const minutes = Math.floor((Date.now() - started) / 60000);
+      this.progress = this.phaseText(rev.job?.phase, title) + (minutes > 0 ? '  (' + minutes + ' min)' : '');
+      this.timers.push(setTimeout(() => { this.pollBuild(n, title, generation, started); }, 3000));
     } catch (err) {
       if (generation === this.generation) {
-        this.error = String(err);
-        hilog.error(0x0001, 'MissingApp', 'Job failed: %{public}s', this.error);
+        this.error = describeError(err as Object);
+        hilog.error(0x0001, 'MissingApp', 'Build failed: %{public}s', this.error);
       }
     }
   }
 
-  private async openGenerated(): Promise<void> {
+  /** The device agent installs a finished build within a few seconds; retry briefly instead of failing at once. */
+  private async openGenerated(attempt: number = 0): Promise<void> {
     try {
       const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      await context.startAbility({ bundleName: 'com.hackyeah.generated', abilityName: 'EntryAbility', moduleName: 'entry' });
+      await context.startAbility({ bundleName: this.bundle, abilityName: 'EntryAbility', moduleName: 'entry' });
+      this.error = '';
     } catch (err) {
-      this.error = 'Could not open generated app: ' + String(err);
+      if (attempt < 8) {
+        this.timers.push(setTimeout(() => { this.openGenerated(attempt + 1); }, 2500));
+      } else {
+        this.error = 'Your app is built but not installed yet: ' + describeError(err as Object);
+      }
     }
   }
 

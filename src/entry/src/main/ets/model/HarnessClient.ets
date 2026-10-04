@@ -128,10 +128,10 @@ export class HarnessClient {
         header: headers,
         extraData: body ?? (method === http.RequestMethod.POST ? '{}' : ''),
         connectTimeout: 10000,
-        readTimeout: 40000
+        readTimeout: 180000      // the planner can take a minute or more
       });
       if (response.responseCode < 200 || response.responseCode >= 300) {
-        throw new Error('Server returned HTTP ' + response.responseCode);
+        throw new Error(serverMessage(response.responseCode, response.result as string));
       }
       return response.result as string;
     } finally {
@@ -181,6 +181,23 @@ export class HarnessClient {
   async diff(id: string, n: number): Promise<DiffResult> {
     return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/diff', http.RequestMethod.GET)) as DiffResult;
   }
+}
+
+interface ServerError {
+  error?: string;
+}
+
+/** 'HTTP 503: planner unavailable: …' from the server's {"error": ...} body, or just the status. */
+function serverMessage(code: number, body: string): string {
+  try {
+    const parsed = JSON.parse(body) as ServerError;
+    if (parsed.error) {
+      return 'HTTP ' + code + ': ' + parsed.error;
+    }
+  } catch (_) {
+    // not JSON
+  }
+  return 'Server returned HTTP ' + code;
 }
 
 /** Human-readable text for anything a failed request can throw (Error, BusinessError, string). */
