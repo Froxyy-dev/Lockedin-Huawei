@@ -70,7 +70,7 @@ struct Index {
     const text = this.prompt.trim();
     this.error = '';
     this.ready = false;
-    this.progress = 'Designing your app…';
+    this.progress = 'Designing the solution…';
     this.buildingRevision = 0;
     this.plan = { goal: text, experienceName: 'Your app', capabilities: [] };
     this.stage = 1;
