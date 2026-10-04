@@ -1,3 +1,18 @@
+# Root allowlist: hdc drops zero-byte files with garbage (binary) names into the working directory; they cannot
+# be matched by name, so everything at the root is ignored except the entries listed here.
+/*
+!/.gitignore
+!/.gitmodules
+!/AGENTS.md
+!/README.md
+!/dev
+!/docs
+!/spec.md
+!/src
+!/suggested-host-venv
+!/tests
+
+# --- project rules ---
 /.hvigor/
 *.p12
 *.p7b
@@ -14,3 +29,5 @@
 /src/entry/src/main/resources/rawfile/harness.json
 
 /.twilio_tokens
+__pycache__/
+*.pyc
