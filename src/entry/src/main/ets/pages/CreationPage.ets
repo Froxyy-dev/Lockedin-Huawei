@@ -1,9 +1,10 @@
 import { router } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { HarnessClient, ProjectDetail, Revision, RevisionSummary, describeError } from '../model/HarnessClient';
+import { HarnessClient, ProgressEvent, ProjectDetail, Revision, RevisionSummary, describeError } from '../model/HarnessClient';
 import { HarmonyTheme } from '../theme/DesignTokens';
 import { SpecPageParams } from './SpecPage';
+import { ProgressPageParams } from './ProgressPage';
 
 interface CreationPageParams {
   projectId: string;
@@ -47,6 +48,7 @@ struct CreationPage {
   @State refining: boolean = false;
   @State accepting: boolean = false;
   @State cancelling: boolean = false;
+  @State latestNews: string = '';          // the last line of the progress feed while building
   private projectId: string = '';
   private client?: HarnessClient;
   private generation: number = 0;
@@ -132,11 +134,25 @@ struct CreationPage {
       hilog.info(0x0001, 'Harness', 'revision %{public}d state=%{public}s phase=%{public}s error=%{public}s', revision.n, revision.state, revision.job?.phase ?? '-', revision.error ?? '-');
       this.updateRevisionState(n, revision.state);
       if (revision.state === 'built' || revision.state === 'failed' || revision.state === 'cancelled') { return; }
+      await this.refreshNews(n, generation);
       this.timers.push(setTimeout(() => { this.poll(n, generation); }, 3000));
     } catch (err) {
       if (generation === this.generation) {
         this.error = 'Build status check failed: ' + describeError(err);
       }
+    }
+  }
+
+  /** The newest progress line, shown next to the spinner; the feed itself is on the Progress page. */
+  private async refreshNews(n: number, generation: number): Promise<void> {
+    if (!this.client) { return; }
+    try {
+      const feed = await this.client.progress(this.projectId, n);
+      if (generation !== this.generation) { return; }
+      const events: ProgressEvent[] = feed.events;
+      this.latestNews = events.length > 0 ? events[events.length - 1].text : '';
+    } catch (_) {
+      // the revision poll already reports connection problems
     }
   }
 
@@ -238,6 +254,12 @@ struct CreationPage {
     router.pushUrl({ url: 'pages/SpecPage', params: params });
   }
 
+  private openProgress(): void {
+    if (!this.current) { return; }
+    const params: ProgressPageParams = { projectId: this.projectId, n: this.current.n };
+    router.pushUrl({ url: 'pages/ProgressPage', params: params });
+  }
+
   build() {
     Scroll() {
       Column({ space: 16 }) {
@@ -301,16 +323,23 @@ struct CreationPage {
             .width('100%').alignItems(HorizontalAlign.Start).padding(18)
             .borderRadius(20).backgroundColor(Color.White).border({ width: 1, color: HarmonyTheme.border })
 
-            Button('Full spec', { type: ButtonType.Normal })
-              .id('FullSpecButton').backgroundColor(HarmonyTheme.softBlue).fontColor(HarmonyTheme.accent)
-              .borderRadius(14).height(46).width('100%').fontWeight(FontWeight.Medium)
-              .onClick(() => { this.openSpec(); })
+            Row({ space: 10 }) {
+              Button('Full spec', { type: ButtonType.Normal })
+                .id('FullSpecButton').backgroundColor(HarmonyTheme.softBlue).fontColor(HarmonyTheme.accent)
+                .borderRadius(14).height(46).layoutWeight(1).fontWeight(FontWeight.Medium)
+                .onClick(() => { this.openSpec(); })
+              Button('Logs', { type: ButtonType.Normal })
+                .id('ProgressButton').backgroundColor(HarmonyTheme.softBlue).fontColor(HarmonyTheme.accent)
+                .borderRadius(14).height(46).width(88).fontWeight(FontWeight.Medium)
+                .onClick(() => { this.openProgress(); })
+            }.width('100%')
 
             if (this.current.state === 'building') {
               Row({ space: 10 }) {
                 LoadingProgress().width(22).height(22).color(HarmonyTheme.accent)
-                Text('Building… ' + (this.current.job?.phase ?? this.current.state))
-                  .fontSize(14).fontColor(HarmonyTheme.secondary).layoutWeight(1)
+                Text(this.latestNews.length > 0 ? this.latestNews : 'Building…')
+                  .id('BuildNews').fontSize(14).fontColor(HarmonyTheme.secondary).layoutWeight(1)
+                  .maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
                 Button(this.cancelling ? 'Stopping…' : 'Cancel', { type: ButtonType.Normal })
                   .id('CancelBuild').backgroundColor(HarmonyTheme.softBlue).fontColor(HarmonyTheme.accent)
                   .borderRadius(12).height(36).enabled(!this.cancelling)

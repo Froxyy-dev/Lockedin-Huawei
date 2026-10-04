@@ -98,6 +98,12 @@ class HarnessContract(unittest.TestCase):
         acc = self.call("POST", f"/projects/{project['id']}/revisions/2/accept", {})   # no bot configured -> accepted
         self.assertMatches("AcceptResult", acc)
         self.assertMatches("DiffResult", self.call("GET", f"/projects/{project['id']}/revisions/2/diff"))
+        feed = self.call("GET", f"/projects/{project['id']}/revisions/2/progress")
+        self.assertMatches("ProgressFeed", feed)
+        self.assertEqual(feed["events"], [], "no bot configured: an accepted revision has an empty feed")
+        sample = {"t": "2026-10-04T00:00:00+00:00", "last": "2026-10-04T00:00:00+00:00", "kind": "coding",
+                  "text": "Writing the app", "count": 2, "problem": False}       # shape served by bot/progress.py fold()
+        self.assertMatches("ProgressEvent", sample)
 
     def test_post_without_body_is_accepted_by_server(self):
         """The client once sent an empty body on accept; the server must tolerate '' and '{}'."""

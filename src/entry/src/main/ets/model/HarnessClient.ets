@@ -81,6 +81,23 @@ export interface DiffResult {
   patch: string;
 }
 
+/** One entry of the build's progress feed, in plain words (server folds repeats into `count`). */
+export interface ProgressEvent {
+  t: string;
+  last: string;
+  kind: string;
+  text: string;
+  count: number;
+  problem: boolean;
+  detail?: string;
+}
+
+export interface ProgressFeed {
+  state: string;
+  error?: string;
+  events: ProgressEvent[];
+}
+
 interface CreateProjectRequest {
   name: string;
 }
@@ -195,6 +212,11 @@ export class HarnessClient {
   /** Stop a building revision: the server stops the worker and restores the last full build. */
   async cancel(id: string, n: number): Promise<Revision> {
     return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/cancel', http.RequestMethod.POST, '{}')) as Revision;
+  }
+
+  /** The build's milestones and problems for revision n: live while building, kept afterwards. */
+  async progress(id: string, n: number): Promise<ProgressFeed> {
+    return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/progress', http.RequestMethod.GET)) as ProgressFeed;
   }
 
   async diff(id: string, n: number): Promise<DiffResult> {

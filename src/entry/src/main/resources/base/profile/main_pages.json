@@ -3,6 +3,7 @@
     "pages/Index",
     "pages/CreationsPage",
     "pages/CreationPage",
-    "pages/SpecPage"
+    "pages/SpecPage",
+    "pages/ProgressPage"
   ]
 }
