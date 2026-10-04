@@ -114,7 +114,8 @@ class HarnessContract(unittest.TestCase):
         self.assertMatches("DiffResult", self.call("GET", f"/projects/{project['id']}/revisions/2/diff"))
         feed = self.call("GET", f"/projects/{project['id']}/revisions/2/progress")
         self.assertMatches("ProgressFeed", feed)
-        self.assertEqual(feed["events"], [], "no bot configured: an accepted revision has an empty feed")
+        self.assertEqual([e["kind"] for e in feed["events"]], ["considering", "rewriting", "planned"],
+                         "no bot configured: an accepted revision keeps only the planner's story in its feed")
         sample = {"t": "2026-10-04T00:00:00+00:00", "last": "2026-10-04T00:00:00+00:00", "kind": "coding",
                   "text": "Writing the app", "count": 2, "problem": False}       # shape served by bot/progress.py fold()
         self.assertMatches("ProgressEvent", sample)
