@@ -78,6 +78,7 @@ struct CreationPage {
   }
 
   private async loadProject(): Promise<void> {
+    hilog.info(0x0001, 'Harness', 'CreationPage.loadProject project=%{public}s', this.projectId);
     this.loading = true;
     this.error = '';
     try {
@@ -99,10 +100,12 @@ struct CreationPage {
   }
 
   private async loadRevision(n: number): Promise<void> {
+    hilog.info(0x0001, 'Harness', 'CreationPage.loadRevision project=%{public}s', this.projectId);
     if (!this.client) { return; }
     try {
       const revision = await this.client.revision(this.projectId, n);
       this.current = revision;
+      hilog.info(0x0001, 'Harness', 'revision %{public}d state=%{public}s phase=%{public}s error=%{public}s', revision.n, revision.state, revision.job?.phase ?? '-', revision.error ?? '-');
       if (revision.state === 'building') {
         this.startPolling(n);
       } else {
@@ -120,11 +123,13 @@ struct CreationPage {
   }
 
   private async poll(n: number, generation: number): Promise<void> {
+    hilog.info(0x0001, 'Harness', 'CreationPage.poll project=%{public}s', this.projectId);
     if (generation !== this.generation || !this.client) { return; }
     try {
       const revision = await this.client.revision(this.projectId, n);
       if (generation !== this.generation) { return; }
       this.current = revision;
+      hilog.info(0x0001, 'Harness', 'revision %{public}d state=%{public}s phase=%{public}s error=%{public}s', revision.n, revision.state, revision.job?.phase ?? '-', revision.error ?? '-');
       this.updateRevisionState(n, revision.state);
       if (revision.state === 'built' || revision.state === 'failed' || revision.state === 'cancelled') { return; }
       this.timers.push(setTimeout(() => { this.poll(n, generation); }, 3000));
@@ -136,6 +141,7 @@ struct CreationPage {
   }
 
   private async createIdea(): Promise<void> {
+    hilog.info(0x0001, 'Harness', 'CreationPage.createIdea project=%{public}s', this.projectId);
     const text = this.draftPrompt.trim();
     if (!text || !this.client) { return; }
     this.creatingDraft = true;
@@ -145,6 +151,7 @@ struct CreationPage {
       this.draftPrompt = '';
       this.revisions = [...this.revisions, toSummary(revision)];
       this.current = revision;
+      hilog.info(0x0001, 'Harness', 'revision %{public}d state=%{public}s phase=%{public}s error=%{public}s', revision.n, revision.state, revision.job?.phase ?? '-', revision.error ?? '-');
       if (this.project) {
         this.project.current_revision = revision.n;
       }
@@ -156,6 +163,7 @@ struct CreationPage {
   }
 
   private async suggestChanges(): Promise<void> {
+    hilog.info(0x0001, 'Harness', 'CreationPage.suggestChanges project=%{public}s', this.projectId);
     const feedback = this.feedbackText.trim();
     if (!feedback || !this.current || !this.client) { return; }
     this.refining = true;
@@ -165,6 +173,7 @@ struct CreationPage {
       this.feedbackText = '';
       this.revisions = [...this.revisions, toSummary(revision)];
       this.current = revision;
+      hilog.info(0x0001, 'Harness', 'revision %{public}d state=%{public}s phase=%{public}s error=%{public}s', revision.n, revision.state, revision.job?.phase ?? '-', revision.error ?? '-');
       if (this.project) {
         this.project.current_revision = revision.n;
       }
@@ -176,6 +185,7 @@ struct CreationPage {
   }
 
   private async acceptAndBuild(): Promise<void> {
+    hilog.info(0x0001, 'Harness', 'CreationPage.acceptAndBuild project=%{public}s', this.projectId);
     if (!this.current || !this.client) { return; }
     this.accepting = true;
     this.error = '';
@@ -192,12 +202,14 @@ struct CreationPage {
   }
 
   private async cancelBuild(): Promise<void> {
+    hilog.info(0x0001, 'Harness', 'CreationPage.cancelBuild project=%{public}s', this.projectId);
     if (!this.client || !this.current) { return; }
     const n = this.current.n;
     this.cancelling = true;
     try {
       const revision = await this.client.cancel(this.projectId, n);
       this.current = revision;
+      hilog.info(0x0001, 'Harness', 'revision %{public}d state=%{public}s phase=%{public}s error=%{public}s', revision.n, revision.state, revision.job?.phase ?? '-', revision.error ?? '-');
       this.updateRevisionState(n, revision.state);
     } catch (err) {
       this.error = 'Could not cancel: ' + describeError(err as Object);
@@ -207,6 +219,7 @@ struct CreationPage {
   }
 
   private async openApp(): Promise<void> {
+    hilog.info(0x0001, 'Harness', 'CreationPage.openApp project=%{public}s', this.projectId);
     if (!this.project || !this.project.bundle) {
       this.error = 'No app has been built for this creation yet.';
       return;

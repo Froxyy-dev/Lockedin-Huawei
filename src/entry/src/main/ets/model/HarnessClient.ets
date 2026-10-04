@@ -1,4 +1,5 @@
 import { http } from '@kit.NetworkKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS';
@@ -117,6 +118,19 @@ export class HarnessClient {
   }
 
   private async request(path: string, method: http.RequestMethod, body?: string): Promise<string> {
+    const started = Date.now();
+    hilog.info(0x0001, 'Harness', '-> %{public}s %{public}s%{public}s body=%{public}d', method, this.config.baseUrl, path, body ? body.length : 0);
+    try {
+      const result = await this.send(path, method, body);
+      hilog.info(0x0001, 'Harness', '<- %{public}s %{public}s ok %{public}d ms, %{public}d bytes', method, path, Date.now() - started, result.length);
+      return result;
+    } catch (err) {
+      hilog.error(0x0001, 'Harness', '<- %{public}s %{public}s FAILED after %{public}d ms: %{public}s', method, path, Date.now() - started, describeError(err as Object));
+      throw err as Error;
+    }
+  }
+
+  private async send(path: string, method: http.RequestMethod, body?: string): Promise<string> {
     const req = http.createHttp();
     try {
       const headers: Record<string, string> = {

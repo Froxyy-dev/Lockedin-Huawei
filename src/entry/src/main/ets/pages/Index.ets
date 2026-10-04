@@ -77,6 +77,7 @@ struct Index {
     this.plan = { goal: text, experienceName: 'Your app', capabilities: [] };
     this.stage = 1;
     this.screen = 'planning';
+    hilog.info(0x0001, 'Harness', 'Index: create -> planning, prompt=%{public}d chars', text.length);
     try {
       const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.client = new HarnessClient(HarnessClient.loadConfig(context));
