@@ -1,21 +1,33 @@
 import { Capability, ExperiencePlan, MockHarmonyPlanner, DEMO_PROMPT } from '../model/HarmonyPlanner';
 import { HarmonyTheme } from '../theme/DesignTokens';
 import { PrimaryActionButton } from './PrimaryActionButton';
+import { TextDialog } from './TextDialog';
 
 @Component
 struct GoalCard {
   goal: string = '';
+  private reader: CustomDialogController | null = null;
+
+  private readFull(): void {
+    this.reader = new CustomDialogController({ builder: TextDialog({ title: 'Your request', text: this.goal }), customStyle: true });
+    this.reader.open();
+  }
 
   build() {
     Column({ space: 12 }) {
-      Text('YOUR REQUEST').fontSize(11).fontWeight(FontWeight.Bold)
-        .letterSpacing(1.6).fontColor(HarmonyTheme.accent)
+      Row() {
+        Text('YOUR REQUEST').fontSize(11).fontWeight(FontWeight.Bold)
+          .letterSpacing(1.6).fontColor(HarmonyTheme.accent).layoutWeight(1)
+        Text('Read all').fontSize(12).fontColor(HarmonyTheme.secondary)
+      }.width('100%')
       Text(this.goal).fontSize(25).lineHeight(32).fontWeight(FontWeight.Medium)
         .fontColor(HarmonyTheme.ink).maxLines(2).textOverflow({ overflow: TextOverflow.Ellipsis })
     }
+    .id('RequestCard')
     .width('100%').alignItems(HorizontalAlign.Start).padding(22)
     .borderRadius(24).backgroundColor(Color.White)
     .border({ width: 1, color: HarmonyTheme.border })
+    .onClick(() => { this.readFull(); })
   }
 }
 
