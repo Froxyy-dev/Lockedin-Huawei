@@ -48,6 +48,7 @@ struct CreationPage {
   @State refining: boolean = false;
   @State accepting: boolean = false;
   @State cancelling: boolean = false;
+  private pollFailures: number = 0;
   @State latestNews: string = '';          // the last line of the progress feed while building
   private projectId: string = '';
   private client?: HarnessClient;
@@ -131,14 +132,23 @@ struct CreationPage {
       const revision = await this.client.revision(this.projectId, n);
       if (generation !== this.generation) { return; }
       this.current = revision;
+      if (this.pollFailures > 0) { this.pollFailures = 0; this.error = ''; }
       hilog.info(0x0001, 'Harness', 'revision %{public}d state=%{public}s phase=%{public}s error=%{public}s', revision.n, revision.state, revision.job?.phase ?? '-', revision.error ?? '-');
       this.updateRevisionState(n, revision.state);
       if (revision.state === 'built' || revision.state === 'failed' || revision.state === 'cancelled') { return; }
       await this.refreshNews(n, generation);
       this.timers.push(setTimeout(() => { this.poll(n, generation); }, 3000));
     } catch (err) {
-      if (generation === this.generation) {
-        this.error = 'Build status check failed: ' + describeError(err);
+      if (generation !== this.generation) { return; }
+      // A status check can fail while the server restarts or the network blinks; the build itself is unaffected.
+      // Keep polling (every 5 s, up to ~3 minutes) instead of abandoning a running build.
+      this.pollFailures += 1;
+      hilog.warn(0x0001, 'Harness', 'poll failed (%{public}d): %{public}s', this.pollFailures, describeError(err));
+      if (this.pollFailures <= 36) {
+        this.error = this.pollFailures >= 3 ? 'Reconnecting to the build server…' : '';
+        this.timers.push(setTimeout(() => { this.poll(n, generation); }, 5000));
+      } else {
+        this.error = 'Lost contact with the build server: ' + describeError(err) + ' (reopen this creation to retry)';
       }
     }
   }
