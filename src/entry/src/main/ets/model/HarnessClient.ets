@@ -178,6 +178,11 @@ export class HarnessClient {
     return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/accept', http.RequestMethod.POST, '{}')) as AcceptResult;
   }
 
+  /** Stop a building revision: the server stops the worker and restores the last full build. */
+  async cancel(id: string, n: number): Promise<Revision> {
+    return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/cancel', http.RequestMethod.POST, '{}')) as Revision;
+  }
+
   async diff(id: string, n: number): Promise<DiffResult> {
     return JSON.parse(await this.request('/projects/' + id + '/revisions/' + n + '/diff', http.RequestMethod.GET)) as DiffResult;
   }

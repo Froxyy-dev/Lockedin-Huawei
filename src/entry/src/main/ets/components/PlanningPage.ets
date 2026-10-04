@@ -45,6 +45,7 @@ export struct PlanningPage {
   @Prop stage: number = 0;
   onBack: () => void = () => {};
   onOpen: () => void = () => {};
+  onCancel: () => void = () => {};
 
   build() {
     Column() {
@@ -68,6 +69,11 @@ export struct PlanningPage {
       } else {
         Text(this.error || this.progress)
           .fontSize(16).fontColor(this.error ? '#B42318' : HarmonyTheme.secondary).width('100%').height(100)
+        if (!this.error) {
+          Button('Cancel', { type: ButtonType.Normal })
+            .id('CancelCreate').backgroundColor(Color.Transparent).fontColor(HarmonyTheme.secondary)
+            .fontSize(15).height(44).width('100%').onClick(this.onCancel)
+        }
       }
     }
     .width('100%').height('100%').alignItems(HorizontalAlign.Start)

@@ -46,6 +46,7 @@ struct CreationPage {
   @State creatingDraft: boolean = false;
   @State refining: boolean = false;
   @State accepting: boolean = false;
+  @State cancelling: boolean = false;
   private projectId: string = '';
   private client?: HarnessClient;
   private generation: number = 0;
@@ -125,7 +126,7 @@ struct CreationPage {
       if (generation !== this.generation) { return; }
       this.current = revision;
       this.updateRevisionState(n, revision.state);
-      if (revision.state === 'built' || revision.state === 'failed') { return; }
+      if (revision.state === 'built' || revision.state === 'failed' || revision.state === 'cancelled') { return; }
       this.timers.push(setTimeout(() => { this.poll(n, generation); }, 3000));
     } catch (err) {
       if (generation === this.generation) {
@@ -187,6 +188,21 @@ struct CreationPage {
       this.error = 'Could not start build: ' + describeError(err);
     } finally {
       this.accepting = false;
+    }
+  }
+
+  private async cancelBuild(): Promise<void> {
+    if (!this.client || !this.current) { return; }
+    const n = this.current.n;
+    this.cancelling = true;
+    try {
+      const revision = await this.client.cancel(this.projectId, n);
+      this.current = revision;
+      this.updateRevisionState(n, revision.state);
+    } catch (err) {
+      this.error = 'Could not cancel: ' + describeError(err as Object);
+    } finally {
+      this.cancelling = false;
     }
   }
 
@@ -281,17 +297,25 @@ struct CreationPage {
               Row({ space: 10 }) {
                 LoadingProgress().width(22).height(22).color(HarmonyTheme.accent)
                 Text('Building… ' + (this.current.job?.phase ?? this.current.state))
-                  .fontSize(14).fontColor(HarmonyTheme.secondary)
+                  .fontSize(14).fontColor(HarmonyTheme.secondary).layoutWeight(1)
+                Button(this.cancelling ? 'Stopping…' : 'Cancel', { type: ButtonType.Normal })
+                  .id('CancelBuild').backgroundColor(HarmonyTheme.softBlue).fontColor(HarmonyTheme.accent)
+                  .borderRadius(12).height(36).enabled(!this.cancelling)
+                  .onClick(() => { this.cancelBuild(); })
               }.width('100%')
             } else if (this.current.state === 'built') {
               Button('Open app', { type: ButtonType.Normal })
                 .id('OpenApp').backgroundColor(HarmonyTheme.accent).fontColor(Color.White)
                 .borderRadius(14).height(48).width('100%')
                 .onClick(() => { this.openApp(); })
-            } else if (this.current.state === 'failed') {
-              Text('Build failed: ' + (this.current.error ?? 'unknown error'))
-                .fontSize(13).fontColor('#B42318').width('100%')
             } else {
+              if (this.current.state === 'failed') {
+                Text('Build failed: ' + (this.current.error ?? 'unknown error'))
+                  .fontSize(13).fontColor('#B42318').width('100%')
+              } else if (this.current.state === 'cancelled') {
+                Text('Build stopped. The app is back at its last finished version.')
+                  .fontSize(13).fontColor(HarmonyTheme.secondary).width('100%')
+              }
               Button(this.accepting ? 'Starting…' : 'Accept & build', { type: ButtonType.Normal })
                 .id('AcceptBuild').backgroundColor(HarmonyTheme.accent).fontColor(Color.White)
                 .borderRadius(14).height(48).width('100%')

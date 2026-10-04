@@ -22,6 +22,7 @@ struct Index {
   private generation: number = 0;
   private client?: HarnessClient;
   private projectId: string = '';
+  private buildingRevision: number = 0;     // > 0 once accept went through
   private bundle: string = '';
   private controller: TextAreaController = new TextAreaController();
   private timers: number[] = [];
@@ -70,6 +71,7 @@ struct Index {
     this.error = '';
     this.ready = false;
     this.progress = 'Designing your app…';
+    this.buildingRevision = 0;
     this.plan = { goal: text, experienceName: 'Your app', capabilities: [] };
     this.stage = 1;
     this.screen = 'planning';
@@ -85,6 +87,7 @@ struct Index {
       hilog.info(0x0001, 'MissingApp', 'Project %{public}s spec ready: %{public}s', project.id, title);
       this.progress = 'Designed “' + title + '”. Starting the build…';
       await this.client.accept(project.id, idea.n);
+      this.buildingRevision = idea.n;
       const detail = await this.client.project(project.id);
       this.bundle = detail.bundle ?? '';
       this.pollBuild(idea.n, title, generation, Date.now());
@@ -111,6 +114,7 @@ struct Index {
       const rev: Revision = await this.client.revision(this.projectId, n);
       if (generation !== this.generation) { return; }
       if (rev.state === 'failed') { throw new Error(rev.error || 'The build failed'); }
+      if (rev.state === 'cancelled') { throw new Error('The build was stopped on the server. Your request is kept: go back to try again.'); }
       if (rev.state === 'built') {
         this.progress = 'Installing your app…';
         this.ready = true;
@@ -123,6 +127,23 @@ struct Index {
       if (generation === this.generation) {
         this.error = describeError(err as Object);
         hilog.error(0x0001, 'MissingApp', 'Build failed: %{public}s', this.error);
+      }
+    }
+  }
+
+  /** Stop everything and go back to the prompt (kept as typed). A running build is stopped on the server, which
+   *  restores the creation's last full revision. */
+  private async cancelCreate(): Promise<void> {
+    const n = this.buildingRevision;
+    const client = this.client;
+    this.reset();                                  // stops polling, back to the create screen with the same prompt
+    this.buildingRevision = 0;
+    if (n > 0 && client) {
+      try {
+        await client.cancel(this.projectId, n);
+        hilog.info(0x0001, 'MissingApp', 'Cancelled build of %{public}s rev %{public}d', this.projectId, n);
+      } catch (err) {
+        hilog.error(0x0001, 'MissingApp', 'Cancel failed: %{public}s', describeError(err as Object));
       }
     }
   }
@@ -150,7 +171,7 @@ struct Index {
             .transition(TransitionEffect.OPACITY.combine(TransitionEffect.scale({ x: 0.98, y: 0.98 })))
         } else if (this.screen === 'planning') {
           PlanningPage({ plan: this.plan, stage: this.stage, progress: this.progress, error: this.error, ready: this.ready, onBack: () => { this.reset(); },
-            onOpen: () => { this.openGenerated(); } })
+            onOpen: () => { this.openGenerated(); }, onCancel: () => { this.cancelCreate(); } })
         } else {
           CareGuardianPlaceholder({ onBack: () => { this.reset(); } })
         }
