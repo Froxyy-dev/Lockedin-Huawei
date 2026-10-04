@@ -45,7 +45,7 @@ This project uses AI-assisted development. Keep this document current and public
 
 | 2026-10-04 | Claude Code | Harness: creations, revisions, accept/refine, build | `harness/` (store, per-project git workspace, stages, HTTP API), client screens in `src/` | Unit, integration and contract tests; end-to-end runs on the emulator. |
 
-| 2026-10-04 | Claude Code | Service proxy for generated apps | `/services/<id>/…` on the harness: server-held keys, exposed-path allowlist, daily limit; app config written at accept | Tests against a fake provider (key swap, refusals, limits); one live, free provider call through the proxy. |
+| 2026-10-04 | Claude Code | Service proxy for generated apps | `/services/<id>/…` on the harness: server-held keys, exposed-path allowlist, optional daily cap; app config written at accept | Tests against a fake provider (key swap, refusals, limits); one live, free provider call through the proxy. |
 
 | 2026-10-04 | Claude Code | Mock test framework, worker abstraction, platform knowledge for workers | Mock planner/agent/device behind env seams; `bot/workers/` contract; Opus-only worker with a hook-enforced subagent cap; SDK/docs/skills access; per-revision app name and icon | Unit and integration tiers green; real-emulator tier green with mocked models; a cheap real Claude run confirmed the subagent cap and knowledge access. |
 
@@ -101,7 +101,7 @@ team split keeps demo work and harness work in separate branches.
 
 ## Known limitations
 
-- Paid services go through the server's proxy with one shared app token and a daily limit per service; per-user
+- Paid services go through the server's proxy with one shared app token (an optional daily cap exists, off by default); per-user
   quotas and subscription gating are not built yet.
 - Physical phones need AGC signing; generated apps are verified on the API 23 emulator only.
 - The emulator cannot inject accelerometer or gyroscope data and has no camera; such features are built but not
