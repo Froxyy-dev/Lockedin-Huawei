@@ -16,6 +16,6 @@
     // "stacktrace": false
   },
   "nodeOptions": {
-    // "maxOldSpaceSize": 8192
+    "maxOldSpaceSize": 3072   // a small app never needs the 8 GB default; several daemons must fit next to two emulators
   }
 }

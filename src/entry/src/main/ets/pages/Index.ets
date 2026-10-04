@@ -9,6 +9,10 @@ import { CareGuardianPlaceholder } from '../components/CareGuardianPlaceholder';
 import { DEMO_PROMPT, ExperiencePlan, MockHarmonyPlanner } from '../model/HarmonyPlanner';
 import { HarmonyTheme } from '../theme/DesignTokens';
 
+interface CreationPageParams {
+  projectId: string;
+}
+
 @Entry
 @Component
 struct Index {
@@ -22,7 +26,6 @@ struct Index {
   private generation: number = 0;
   private client?: HarnessClient;
   private projectId: string = '';
-  private buildingRevision: number = 0;     // > 0 once accept went through
   private bundle: string = '';
   private controller: TextAreaController = new TextAreaController();
   private timers: number[] = [];
@@ -62,7 +65,7 @@ struct Index {
     hilog.info(0x0001, 'HarmonyCreate', 'Demo reset');
   }
 
-  /** One shot through the harness: idea -> planner spec (revision 1) -> accept -> build -> installed -> open. */
+  /** Create: idea -> planner spec (revision 1) -> the creation page to read, refine or accept and build. */
   private async beginPlanning(): Promise<void> {
     if (!this.prompt.trim()) { return; }
     this.cancelPlanning();
@@ -71,7 +74,6 @@ struct Index {
     this.error = '';
     this.ready = false;
     this.progress = 'Designing the solution…';
-    this.buildingRevision = 0;
     this.plan = { goal: text, experienceName: 'Your app', capabilities: [] };
     this.stage = 1;
     this.screen = 'planning';
@@ -85,12 +87,9 @@ struct Index {
       const title = idea.summary.title || 'Your app';
       this.plan = { goal: text, experienceName: title, capabilities: [] };
       hilog.info(0x0001, 'MissingApp', 'Project %{public}s spec ready: %{public}s', project.id, title);
-      this.progress = 'Designed “' + title + '”. Starting the build…';
-      await this.client.accept(project.id, idea.n);
-      this.buildingRevision = idea.n;
-      const detail = await this.client.project(project.id);
-      this.bundle = detail.bundle ?? '';
-      this.pollBuild(idea.n, title, generation, Date.now());
+      // The plan's review step: the person reads the summary, refines or accepts. Nothing builds before that.
+      this.reset();
+      router.pushUrl({ url: 'pages/CreationPage', params: { projectId: project.id } as CreationPageParams });
     } catch (err) {
       if (generation === this.generation) {
         this.error = 'Could not create your app: ' + describeError(err as Object);
@@ -99,53 +98,10 @@ struct Index {
     }
   }
 
-  private phaseText(phase: string | undefined, title: string): string {
-    if (phase === undefined || phase === '' || phase === 'workspace' || phase === 'emulator') { return 'Preparing to build “' + title + '”…'; }
-    if (phase === 'baseline') { return 'Preparing the native project…'; }
-    if (phase.startsWith('agent')) { return 'Writing “' + title + '”…'; }
-    if (phase.startsWith('repair')) { return 'Fixing build errors…'; }
-    if (phase === 'verify') { return 'Building and checking your app…'; }
-    return 'Building “' + title + '”…';
-  }
-
-  private async pollBuild(n: number, title: string, generation: number, started: number): Promise<void> {
-    if (generation !== this.generation || !this.client) { return; }
-    try {
-      const rev: Revision = await this.client.revision(this.projectId, n);
-      if (generation !== this.generation) { return; }
-      if (rev.state === 'failed') { throw new Error(rev.error || 'The build failed'); }
-      if (rev.state === 'cancelled') { throw new Error('The build was stopped on the server. Your request is kept: go back to try again.'); }
-      if (rev.state === 'built') {
-        this.progress = 'Installing your app…';
-        this.ready = true;
-        return;
-      }
-      const minutes = Math.floor((Date.now() - started) / 60000);
-      this.progress = this.phaseText(rev.job?.phase, title) + (minutes > 0 ? '  (' + minutes + ' min)' : '');
-      this.timers.push(setTimeout(() => { this.pollBuild(n, title, generation, started); }, 3000));
-    } catch (err) {
-      if (generation === this.generation) {
-        this.error = describeError(err as Object);
-        hilog.error(0x0001, 'MissingApp', 'Build failed: %{public}s', this.error);
-      }
-    }
-  }
-
-  /** Stop everything and go back to the prompt (kept as typed). A running build is stopped on the server, which
-   *  restores the creation's last full revision. */
-  private async cancelCreate(): Promise<void> {
-    const n = this.buildingRevision;
-    const client = this.client;
-    this.reset();                                  // stops polling, back to the create screen with the same prompt
-    this.buildingRevision = 0;
-    if (n > 0 && client) {
-      try {
-        await client.cancel(this.projectId, n);
-        hilog.info(0x0001, 'MissingApp', 'Cancelled build of %{public}s rev %{public}d', this.projectId, n);
-      } catch (err) {
-        hilog.error(0x0001, 'MissingApp', 'Cancel failed: %{public}s', describeError(err as Object));
-      }
-    }
+  /** Cancel while the solution is being designed: back to the prompt, kept as typed. (Builds are cancelled on the
+   *  creation page, where they are started.) */
+  private cancelCreate(): void {
+    this.reset();
   }
 
   /** The device agent installs a finished build within a few seconds; retry briefly instead of failing at once. */
